@@ -1,36 +1,220 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>OTech Inventory</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTech Inventario</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        input, button { padding: 10px; margin: 5px 0; width: 100%; }
-        .result { margin-top: 20px; padding: 15px; background: #f0f0f0; }
-        img { max-width: 300px; margin-top: 10px; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --gray-100: #f9fafb;
+            --gray-200: #e5e7eb;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--gray-900);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--gray-700);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #f0f7ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 12px;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        #camposProducto {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            background-color: #f0f7ff;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #camposProducto h3 {
+            margin-bottom: 16px;
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        #resultado {
+            display: none;
+            margin-top: 32px;
+            padding: 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .success {
+            background-color: #ecfdf5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+
+        .error {
+            background-color: #fef2f2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .loading {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        #resultado img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .barcode-container {
+            text-align: center;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--gray-500);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Registro de Piezas OTech</h1>
+        <h1>Registro de Piezas — OTech</h1>
 
-        <label>Código Original (QR):</label>
-        <input type="text" id="codigoOriginal" placeholder="Escanear o escribir código original">
-
-        <label>Número de Serie:</label>
-        <input type="text" id="numeroSerie" placeholder="Escanear o escribir número de serie">
-
-        <div id="camposProducto" style="display:none; margin-top: 20px; padding: 15px; background: #e8f4fc;">
-            <h3>Registrar nuevo producto</h3>
-            <input type="text" id="nombreProducto" placeholder="Nombre del producto">
-            <input type="text" id="descripcionProducto" placeholder="Descripción">
-            <input type="text" id="categoriaProducto" placeholder="Categoría">
+        <div class="form-group">
+            <label for="codigoOriginal">Código Original (QR / Barras)</label>
+            <input type="text" id="codigoOriginal" placeholder="Escanee o ingrese el código del fabricante" autofocus>
         </div>
 
-        <button onclick="registrarPieza()">Registrar Pieza</button>
+        <div class="form-group">
+            <label for="numeroSerie">Número de Serie</label>
+            <input type="text" id="numeroSerie" placeholder="Escanee o ingrese el número de serie único">
+        </div>
 
-        <div id="resultado" class="result" style="display:none;"></div>
+        <div id="camposProducto">
+            <h3>🆕 Producto Nuevo — Complete los datos</h3>
+            <div class="form-group">
+                <label for="nombreProducto">Nombre del Producto</label>
+                <input type="text" id="nombreProducto" placeholder="Ej: Sensor de Presión XYZ-200">
+            </div>
+            <div class="form-group">
+                <label for="descripcionProducto">Descripción</label>
+                <input type="text" id="descripcionProducto" placeholder="Ej: Sensor industrial de alta precisión">
+            </div>
+            <div class="form-group">
+                <label for="categoriaProducto">Categoría</label>
+                <input type="text" id="categoriaProducto" placeholder="Ej: Sensores, Electrónica, Herramientas">
+            </div>
+        </div>
+
+        <button id="btnRegistrar" onclick="registrarPieza()">Registrar Pieza</button>
+
+        <div id="resultado"></div>
     </div>
+
+    <footer>
+        Sistema de Inventario OTech — v1.0
+    </footer>
 
     <script src="renderer.js"></script>
 </body>
