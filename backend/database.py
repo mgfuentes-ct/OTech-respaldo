@@ -8,14 +8,24 @@ load_dotenv()
 
 def get_db_connection():
     try:
+        print("🔌 Intentando conectar a MySQL...")
         connection = mysql.connector.connect(
-            host=os.getenv("DB_HOST"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME")
+            host=os.getenv("DB_HOST", "localhost"),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", ""),
+            database=os.getenv("DB_NAME", "otech_inventory"),
+            autocommit=True,
+            connection_timeout=10  # Timeout de 10 segundos
         )
         if connection.is_connected():
+            print("✅ ¡Conexión a MySQL ESTABLECIDA!")
             return connection
+        else:
+            print("❌ Conexión fallida: no está conectado.")
+            return None
     except Error as e:
-        print(f"Error connecting to MySQL: {e}")
+        print(f"❌ ERROR FATAL al conectar a MySQL: {e}")
+        return None
+    except Exception as e:
+        print(f"❌ ERROR INESPERADO: {e}")
         return None

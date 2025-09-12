@@ -1,21 +1,105 @@
 // frontend/renderer.js
-const axios = require('axios');
+
+const API_URL = 'http://localhost:8000';
+
+function showSection(section) {
+    // Ocultar todas las secciones
+    document.getElementById('registro-section').style.display = 'none';
+    document.getElementById('inventario-section').style.display = 'none';
+
+    // Quitar 'active' de todas las pestañas
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+
+    // Mostrar la sección seleccionada
+    const sectionElement = document.getElementById(`${section}-section`);
+    if (sectionElement) {
+        sectionElement.style.display = 'block';
+    } else {
+        console.warn(`Sección #${section}-section no encontrada.`);
+        return;
+    }
+
+    // Marcar la pestaña como activa
+    const tabs = document.querySelectorAll('.nav-tab');
+    tabs.forEach(tab => {
+        if (tab.textContent.trim().toLowerCase().includes(section === 'registro' ? 'registrar' : 'inventario')) {
+            tab.classList.add('active');
+        }
+    });
+
+    // Si es inventario, cargar datos
+    if (section === 'inventario') {
+        cargarInventario();
+    }
+}
+
+async function cargarInventario() {
+    const loadingDiv = document.getElementById('inventario-cargando');
+    const contenidoDiv = document.getElementById('inventario-contenido');
+    const tbody = document.getElementById('inventario-body');
+
+    loadingDiv.style.display = 'block';
+    contenidoDiv.style.display = 'none';
+    tbody.innerHTML = '';
+
+    try {
+        const response = await axios.get(`${API_URL}/inventario`);
+        const piezas = response.data;
+
+        if (piezas.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #9ca3af;">
+                        No hay piezas registradas aún.
+                    </td>
+                </tr>
+            `;
+        } else {
+            piezas.forEach(pieza => {
+                const estadoClass = `estado-${pieza.estado}`;
+                const fecha = new Date(pieza.fecha_registro).toLocaleString();
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${pieza.id_pieza}</td>
+                    <td><strong>${pieza.codigo_barras}</strong></td>
+                    <td>${pieza.numero_serie}</td>
+                    <td>${pieza.nombre_producto}</td>
+                    <td><span class="${estadoClass}">${pieza.estado}</span></td>
+                    <td>${fecha}</td>
+                    <td>${pieza.usuario_nombre || 'N/A'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        loadingDiv.style.display = 'none';
+        contenidoDiv.style.display = 'block';
+
+    } catch (error) {
+        console.error("Error al cargar inventario:", error);
+        loadingDiv.innerHTML = `
+            <p style="color: #ef4444;">❌ Error al cargar el inventario. Verifica que el servidor esté activo.</p>
+            <button onclick="cargarInventario()" style="margin-top: 16px; padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                Reintentar
+            </button>
+        `;
+    }
+}
 
 async function registrarPieza() {
     const codigoOriginal = document.getElementById('codigoOriginal').value;
     const numeroSerie = document.getElementById('numeroSerie').value;
 
     if (!codigoOriginal || !numeroSerie) {
-        alert("Por favor, ingresa ambos códigos");
+        mostrarResultado("Por favor, ingresa ambos códigos", "error");
         return;
     }
 
-    const resultadoDiv = document.getElementById('resultado');
-    resultadoDiv.style.display = 'block';
-    resultadoDiv.innerHTML = '<p>Registrando... por favor espera.</p>';
+    mostrarResultado("Registrando... por favor espera.", "loading", true);
 
     try {
-        const response = await axios.post('http://localhost:8000/registrar_pieza', {
+        const response = await axios.post(`${API_URL}/registrar_pieza`, {
             codigo_original: codigoOriginal,
             numero_serie: numeroSerie,
             nombre_producto: document.getElementById('nombreProducto')?.value || null,
@@ -25,26 +109,48 @@ async function registrarPieza() {
         });
 
         const data = response.data;
-        resultadoDiv.innerHTML = `
-            <h3>Éxito</h3>
+        mostrarResultado(`
+            <h3>✅ Éxito</h3>
             <p><strong>Código OTech:</strong> ${data.codigo_otech}</p>
-            <img src="${data.ruta_etiqueta}" alt="Código de barras">
+            <div class="barcode-container">
+                <img src="${data.ruta_etiqueta}" alt="Código de barras">
+            </div>
             <p>Guarda esta etiqueta e imprímela.</p>
-        `;
+        `, "success");
 
         // Limpiar campos
         document.getElementById('codigoOriginal').value = '';
         document.getElementById('numeroSerie').value = '';
+        document.getElementById('camposProducto').style.display = 'none';
 
     } catch (error) {
+        let mensaje = "Ocurrió un error inesperado.";
+        let tipo = "error";
+
         if (error.response?.data?.detail === "Nombre del producto requerido para nuevo producto") {
             document.getElementById('camposProducto').style.display = 'block';
-            resultadoDiv.innerHTML = '<p style="color:red;">⚠️ Este producto no existe. Completa los datos abajo y vuelve a intentar.</p>';
+            mensaje = "⚠️ Este producto no existe. Completa los datos abajo y vuelve a intentar.";
         } else if (error.response?.data?.detail === "Número de serie ya registrado") {
-            resultadoDiv.innerHTML = '<p style="color:red;">⚠️ ¡Error! Este número de serie ya está registrado.</p>';
+            mensaje = "⚠️ ¡Error! Este número de serie ya está registrado.";
         } else {
-            resultadoDiv.innerHTML = `<p style="color:red;">❌ Error: ${error.message}</p>`;
+            mensaje = `❌ Error: ${error.message}`;
         }
+
+        mostrarResultado(mensaje, tipo);
+    }
+}
+
+function mostrarResultado(mensaje, tipo, loading = false) {
+    const resultadoDiv = document.getElementById('resultado');
+    resultadoDiv.innerHTML = mensaje;
+    resultadoDiv.className = `result ${tipo}`;
+    resultadoDiv.style.display = 'block';
+
+    if (loading) {
+        window.scrollTo({
+            top: resultadoDiv.offsetTop - 100,
+            behavior: 'smooth'
+        });
     }
 }
 
@@ -54,10 +160,28 @@ document.getElementById('codigoOriginal').addEventListener('blur', async () => {
     if (!codigo) return;
 
     try {
-        const response = await axios.get(`http://localhost:8000/health`); // Solo verificamos conexión
-        // Opcional: hacer un endpoint /producto?codigo=XXX para verificar existencia
-        // Por ahora, mostramos campos si el usuario quiere forzar nuevo registro
+        const response = await axios.get(`${API_URL}/health`);
+        // Opcional: verificar si producto existe con un endpoint dedicado
     } catch (err) {
         alert("Backend no disponible. Asegúrate de que FastAPI esté corriendo.");
     }
+});
+
+// Soporte para escaneo con Enter
+document.getElementById('codigoOriginal').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('numeroSerie').focus();
+    }
+});
+
+document.getElementById('numeroSerie').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        registrarPieza();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        showSection('registro');
+    }, 100);
 });

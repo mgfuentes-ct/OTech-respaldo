@@ -6,6 +6,8 @@ import barcode
 from barcode.writer import ImageWriter
 import os
 
+from database import get_db_connection #importar la conexion a la base de datos
+
 app = FastAPI(title="OTech Inventory API")
 
 # Crear carpeta para códigos si no existe
@@ -55,3 +57,52 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
 @app.get("/health")
 def health_check():
     return {"status": "OK"}
+
+
+# endpoint para obtener todas las piezas en inventario
+
+@app.get("/inventario")
+async def obtener_inventario():
+    print("📥 Solicitando /inventario...")
+    conn = get_db_connection()
+    
+    if conn is None:
+        print("❌ ¡Falló la conexión en el endpoint! Devolviendo error 500.")
+        raise HTTPException(status_code=500, detail="Error: No se pudo conectar a la base de datos")
+
+    try:
+        print("📊 Creando cursor...")
+        cursor = conn.cursor(dictionary=True)
+        
+        print("📈 Ejecutando consulta SQL...")
+        cursor.execute("""
+            SELECT 
+                p.id_pieza,
+                p.codigo_barras,
+                p.numero_serie,
+                p.estado,
+                p.fecha_registro,
+                pr.nombre AS nombre_producto,
+                COALESCE(u.nombre, 'Usuario eliminado') AS usuario_nombre
+            FROM pieza p
+            LEFT JOIN producto pr ON p.id_producto = pr.id_producto
+            LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
+            ORDER BY p.fecha_registro DESC
+        """)
+        
+        print("✅ Consulta ejecutada. Obteniendo resultados...")
+        piezas = cursor.fetchall()
+        print(f"📋 Se encontraron {len(piezas)} piezas.")
+        
+        cursor.close()
+        conn.close()
+        print("🔌 Conexión cerrada.")
+        
+        return piezas
+    except Exception as e:
+        print(f"💥 ERROR al ejecutar la consulta: {e}")
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn.is_connected():
+            conn.close()
+        raise HTTPException(status_code=500, detail=f"Error en consulta SQL: {str(e)}")

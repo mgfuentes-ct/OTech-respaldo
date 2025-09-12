@@ -27,17 +27,64 @@
             font-family: 'Inter', sans-serif;
             background-color: #f5f7fa;
             color: var(--gray-900);
-            padding: 20px;
-            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+        }
+
+        .navbar {
+            background: white;
+            padding: 0 40px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 24px;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 2px;
+            margin-left: 40px;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+        }
+
+        .nav-tab.active {
+            background: #F2F3F5;
+            color: var(--primary);
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: var(--gray-200);
         }
 
         .container {
-            max-width: 720px;
-            margin: 0 auto;
-            background: white;
+            max-width: 1200px;
+            margin: 40px auto;
             padding: 40px;
+            background: white;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-top: 20px;
         }
 
         h1 {
@@ -80,7 +127,7 @@
             width: 100%;
             padding: 16px;
             background-color: var(--primary);
-            color: white;
+            color: #97aedf;
             border: none;
             border-radius: 10px;
             font-size: 16px;
@@ -169,53 +216,171 @@
             margin-top: 16px;
         }
 
+        /* Estilos para la tabla de inventario */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background-color: var(--gray-100);
+            font-weight: 600;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .estado-almacenado {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .estado-salida {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .estado-nuevo {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         footer {
             text-align: center;
-            margin-top: 40px;
+            margin: 60px auto 30px;
             color: var(--gray-500);
             font-size: 14px;
+            max-width: 1200px;
+            padding: 0 40px;
+        }
+
+        /* Mostrar registro por defecto */
+        #inventario-section {
+            display: none;
+        }
+
+        #registro-section {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Registro de Piezas — OTech</h1>
 
-        <div class="form-group">
-            <label for="codigoOriginal">Código Original (QR / Barras)</label>
-            <input type="text" id="codigoOriginal" placeholder="Escanee o ingrese el código del fabricante" autofocus>
+    <!-- Barra de navegación -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand">OTech inventario</a>
+        <div class="nav-tabs">
+            <button class="nav-tab" onclick="showSection('registro')">Registrar pieza</button>
+            <button class="nav-tab" onclick="showSection('inventario')">Inventario</button>
         </div>
+    </nav>
 
-        <div class="form-group">
-            <label for="numeroSerie">Número de Serie</label>
-            <input type="text" id="numeroSerie" placeholder="Escanee o ingrese el número de serie único">
+    <!-- Sección: Registrar Pieza -->
+    <div id="registro-section">
+        <div class="container">
+            <h1>Registro de Piezas</h1>
+
+            <div class="form-group">
+                <label for="codigoOriginal">Código original (QR / Barras)</label>
+                <input type="text" id="codigoOriginal" placeholder="Escanee o ingrese el código del fabricante" autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="numeroSerie">Número de serie</label>
+                <input type="text" id="numeroSerie" placeholder="Escanee o ingrese el número de serie único">
+            </div>
+
+            <div id="camposProducto">
+                <h3>Producto Nuevo — Complete los datos</h3>
+                <div class="form-group">
+                    <label for="nombreProducto">Nombre del producto</label>
+                    <input type="text" id="nombreProducto" placeholder="Ej: Sensor de Presión XYZ-200">
+                </div>
+                <div class="form-group">
+                    <label for="descripcionProducto">Descripción</label>
+                    <input type="text" id="descripcionProducto" placeholder="Ej: Sensor industrial de alta precisión">
+                </div>
+                <div class="form-group">
+                    <label for="categoriaProducto">Categoría</label>
+                    <input type="text" id="categoriaProducto" placeholder="Ej: Sensores, Electrónica, Herramientas">
+                </div>
+            </div>
+
+            <button id="btnRegistrar" onclick="registrarPieza()">Registrar pieza</button>
+
+            <div id="resultado"></div>
         </div>
+    </div>
 
-        <div id="camposProducto">
-            <h3>🆕 Producto Nuevo — Complete los datos</h3>
-            <div class="form-group">
-                <label for="nombreProducto">Nombre del Producto</label>
-                <input type="text" id="nombreProducto" placeholder="Ej: Sensor de Presión XYZ-200">
+    <!-- Sección: Inventario -->
+    <div id="inventario-section">
+        <div class="container">
+            <h1>Inventario de piezas</h1>
+            <div id="inventario-cargando" style="text-align: center; padding: 40px;">
+                <div class="loading-spinner"></div>
+                <p>Cargando inventario...</p>
             </div>
-            <div class="form-group">
-                <label for="descripcionProducto">Descripción</label>
-                <input type="text" id="descripcionProducto" placeholder="Ej: Sensor industrial de alta precisión">
-            </div>
-            <div class="form-group">
-                <label for="categoriaProducto">Categoría</label>
-                <input type="text" id="categoriaProducto" placeholder="Ej: Sensores, Electrónica, Herramientas">
+            <div id="inventario-contenido" style="display: none;">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Pieza</th>
+                                <th>Código OTech</th>
+                                <th>Número de Serie</th>
+                                <th>Producto</th>
+                                <th>Estado</th>
+                                <th>Registrado</th>
+                                <th>Por</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventario-body">
+                            <!-- Aquí se insertan las filas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <button id="btnRegistrar" onclick="registrarPieza()">Registrar Pieza</button>
-
-        <div id="resultado"></div>
     </div>
 
     <footer>
-        Sistema de Inventario OTech — v1.0
+        Sistema de inventario OTech — v1.0
     </footer>
 
+    <!-- ✅ CORRECCIÓN: Eliminar espacios en la URL de axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
