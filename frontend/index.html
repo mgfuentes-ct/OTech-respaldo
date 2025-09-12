@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OTech Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        input, button { padding: 10px; margin: 5px 0; width: 100%; }
+        .result { margin-top: 20px; padding: 15px; background: #f0f0f0; }
+        img { max-width: 300px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Piezas OTech</h1>
+
+        <label>Código Original (QR):</label>
+        <input type="text" id="codigoOriginal" placeholder="Escanear o escribir código original">
+
+        <label>Número de Serie:</label>
+        <input type="text" id="numeroSerie" placeholder="Escanear o escribir número de serie">
+
+        <div id="camposProducto" style="display:none; margin-top: 20px; padding: 15px; background: #e8f4fc;">
+            <h3>Registrar nuevo producto</h3>
+            <input type="text" id="nombreProducto" placeholder="Nombre del producto">
+            <input type="text" id="descripcionProducto" placeholder="Descripción">
+            <input type="text" id="categoriaProducto" placeholder="Categoría">
+        </div>
+
+        <button onclick="registrarPieza()">Registrar Pieza</button>
+
+        <div id="resultado" class="result" style="display:none;"></div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

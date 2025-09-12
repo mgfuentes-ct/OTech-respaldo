@@ -1,0 +1,27 @@
+{
+  "name": "otech-respaldo",
+  "version": "1.0.0",
+  "main": "frontend/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgfuentes-ct/OTech-respaldo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mgfuentes-ct/OTech-respaldo/issues"
+  },
+  "homepage": "https://github.com/mgfuentes-ct/OTech-respaldo#readme",
+  "description": "",
+  "devDependencies": {
+    "electron": "^38.1.0"
+  },
+  "dependencies": {
+    "axios": "^1.12.1"
+  }
+}
