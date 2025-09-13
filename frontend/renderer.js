@@ -33,45 +33,39 @@ function showSection(section) {
     }
 }
 
+let inventarioCompleto = [];
+
+// Función para cargar el inventario
 async function cargarInventario() {
     const loadingDiv = document.getElementById('inventario-cargando');
     const contenidoDiv = document.getElementById('inventario-contenido');
     const tbody = document.getElementById('inventario-body');
+    const filtroProducto = document.getElementById('filtro-producto');
+
+    if (!loadingDiv || !contenidoDiv || !tbody) return;
 
     loadingDiv.style.display = 'block';
     contenidoDiv.style.display = 'none';
     tbody.innerHTML = '';
 
     try {
-        const response = await axios.get(`${API_URL}/inventario`);
-        const piezas = response.data;
+        const response = await axios.get('http://localhost:8000/inventario');
+        inventarioCompleto = response.data;
 
-        if (piezas.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: #9ca3af;">
-                        No hay piezas registradas aún.
-                    </td>
-                </tr>
-            `;
-        } else {
-            piezas.forEach(pieza => {
-                const estadoClass = `estado-${pieza.estado}`;
-                const fecha = new Date(pieza.fecha_registro).toLocaleString();
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${pieza.id_pieza}</td>
-                    <td><strong>${pieza.codigo_barras}</strong></td>
-                    <td>${pieza.numero_serie}</td>
-                    <td>${pieza.nombre_producto}</td>
-                    <td><span class="${estadoClass}">${pieza.estado}</span></td>
-                    <td>${fecha}</td>
-                    <td>${pieza.usuario_nombre || 'N/A'}</td>
-                `;
-                tbody.appendChild(row);
+        // Llenar filtro de productos (sin duplicados)
+        if (filtroProducto) {
+            filtroProducto.innerHTML = '<option value="">Todos los productos</option>';
+            const productosUnicos = [...new Set(inventarioCompleto.map(p => p.nombre_producto))];
+            productosUnicos.forEach(producto => {
+                const option = document.createElement('option');
+                option.value = producto;
+                option.textContent = producto;
+                filtroProducto.appendChild(option);
             });
         }
+
+        // Aplicar filtros iniciales (vacíos)
+        aplicarFiltros();
 
         loadingDiv.style.display = 'none';
         contenidoDiv.style.display = 'block';
@@ -84,6 +78,54 @@ async function cargarInventario() {
                 Reintentar
             </button>
         `;
+        loadingDiv.style.display = 'block';
+        contenidoDiv.style.display = 'none';
+    }
+}
+
+// Función para aplicar filtros
+function aplicarFiltros() {
+    const filtroSerie = document.getElementById('filtro-serie')?.value.toLowerCase() || '';
+    const filtroEstado = document.getElementById('filtro-estado')?.value || '';
+    const filtroProducto = document.getElementById('filtro-producto')?.value || '';
+    const tbody = document.getElementById('inventario-body');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    const piezasFiltradas = inventarioCompleto.filter(pieza => {
+        const coincideSerie = pieza.numero_serie.toLowerCase().includes(filtroSerie);
+        const coincideEstado = filtroEstado === '' || pieza.estado === filtroEstado;
+        const coincideProducto = filtroProducto === '' || pieza.nombre_producto === filtroProducto;
+        return coincideSerie && coincideEstado && coincideProducto;
+    });
+
+    if (piezasFiltradas.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: #9ca3af;">
+                    No se encontraron piezas con los filtros aplicados.
+                </td>
+            </tr>
+        `;
+    } else {
+        piezasFiltradas.forEach(pieza => {
+            const estadoClass = `estado-${pieza.estado}`;
+            const fecha = new Date(pieza.fecha_registro).toLocaleString();
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${pieza.id_pieza}</td>
+                <td><strong>${pieza.codigo_barras}</strong></td>
+                <td>${pieza.numero_serie}</td>
+                <td>${pieza.nombre_producto}</td>
+                <td><span class="${estadoClass}">${pieza.estado}</span></td>
+                <td>${fecha}</td>
+                <td>${pieza.usuario_nombre || 'N/A'}</td>
+            `;
+            tbody.appendChild(row);
+        });
     }
 }
 
@@ -184,4 +226,15 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         showSection('registro');
     }, 100);
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'filtro-serie') {
+            aplicarFiltros();
+        }
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target.id === 'filtro-estado' || e.target.id === 'filtro-producto') {
+            aplicarFiltros();
+        }
+    });
 });

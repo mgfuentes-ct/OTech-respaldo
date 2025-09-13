@@ -228,6 +228,11 @@
             font-size: 14px;
         }
 
+        thead {
+            background-color: #15347d;
+            background: #10275d;
+        }
+
         th, td {
             padding: 16px;
             text-align: left;
@@ -347,12 +352,50 @@
     <!-- Sección: Inventario -->
     <div id="inventario-section">
         <div class="container">
-            <h1>Inventario de piezas</h1>
-            <div id="inventario-cargando" style="text-align: center; padding: 40px;">
+            <h1>Inventario de Piezas</h1>
+
+            <!-- 🔍 Barra de búsqueda y filtros -->
+            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end;">
+                    <!-- Búsqueda por número de serie -->
+                    <div>
+                        <label for="filtro-serie" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">🔍 Número de Serie</label>
+                        <input type="text" id="filtro-serie" placeholder="Ej: SN123456" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
+                    </div>
+
+                    <!-- Filtro por estado -->
+                    <div>
+                        <label for="filtro-estado" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">📊 Estado</label>
+                        <select id="filtro-estado" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
+                            <option value="">Todos los estados</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Almacenado">Almacenado</option>
+                            <option value="En uso">En uso</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                            <option value="Salida">Salida</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro por producto (opcional, si tienes muchos productos) -->
+                    <div>
+                        <label for="filtro-producto" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">📦 Producto</label>
+                        <select id="filtro-producto" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
+                            <option value="">Todos los productos</option>
+                            <!-- Opciones se llenarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicador de carga -->
+            <div id="inventario-cargando" style="text-align: center; padding: 40px; display: none;">
                 <div class="loading-spinner"></div>
                 <p>Cargando inventario...</p>
             </div>
-            <div id="inventario-contenido" style="display: none;">
+
+            <!-- Tabla de inventario -->
+            <div id="inventario-contenido">
                 <div class="table-container">
                     <table>
                         <thead>
