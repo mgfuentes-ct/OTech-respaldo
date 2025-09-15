@@ -22,6 +22,7 @@
     "electron": "^38.1.0"
   },
   "dependencies": {
-    "axios": "^1.12.1"
+    "axios": "^1.12.1",
+    "electron-printer": "^0.0.5"
   }
 }

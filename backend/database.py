@@ -18,14 +18,14 @@ def get_db_connection():
             connection_timeout=10  # Timeout de 10 segundos
         )
         if connection.is_connected():
-            print("✅ ¡Conexión a MySQL ESTABLECIDA!")
+            print("¡Conexión a MySQL ESTABLECIDA!")
             return connection
         else:
-            print("❌ Conexión fallida: no está conectado.")
+            print("Conexión fallida: no está conectado.")
             return None
     except Error as e:
-        print(f"❌ ERROR FATAL al conectar a MySQL: {e}")
+        print(f"ERROR FATAL al conectar a MySQL: {e}")
         return None
     except Exception as e:
-        print(f"❌ ERROR INESPERADO: {e}")
+        print(f"ERROR INESPERADO: {e}")
         return None

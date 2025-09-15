@@ -13,7 +13,7 @@ function createWindow () {
     }
   });
 
-  win.loadFile('frontend/index.html');
+  win.loadFile('frontend/login.html');
   win.webContents.openDevTools(); // Opcional: abre consola automáticamente
 }
 

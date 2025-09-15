@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' ;">
     <title>OTech Inventario</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
@@ -347,6 +348,12 @@
 
             <div id="resultado"></div>
         </div>
+
+
+        <div id="alertas-stock" style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;">
+            <h3 style="color: #d97706; margin: 0 0 10px 0;">⚠️ Alertas de Stock Bajo</h3>
+            <div id="lista-alertas"></div>
+        </div>
     </div>
 
     <!-- Sección: Inventario -->
@@ -354,18 +361,18 @@
         <div class="container">
             <h1>Inventario de Piezas</h1>
 
-            <!-- 🔍 Barra de búsqueda y filtros -->
+            <!-- Barra de búsqueda y filtros -->
             <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end;">
                     <!-- Búsqueda por número de serie -->
                     <div>
-                        <label for="filtro-serie" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">🔍 Número de Serie</label>
+                        <label for="filtro-serie" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Número de Serie</label>
                         <input type="text" id="filtro-serie" placeholder="Ej: SN123456" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
                     </div>
 
                     <!-- Filtro por estado -->
                     <div>
-                        <label for="filtro-estado" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">📊 Estado</label>
+                        <label for="filtro-estado" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Estado</label>
                         <select id="filtro-estado" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
                             <option value="">Todos los estados</option>
                             <option value="Nuevo">Nuevo</option>
@@ -379,12 +386,15 @@
 
                     <!-- Filtro por producto (opcional, si tienes muchos productos) -->
                     <div>
-                        <label for="filtro-producto" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">📦 Producto</label>
+                        <label for="filtro-producto" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Producto</label>
                         <select id="filtro-producto" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
                             <option value="">Todos los productos</option>
                             <!-- Opciones se llenarán dinámicamente -->
                         </select>
                     </div>
+                    <button onclick="exportarInventario()" style="margin: 20px 0; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        Exportar a Excel
+                    </button>
                 </div>
             </div>
 
@@ -422,7 +432,7 @@
         Sistema de inventario OTech — v1.0
     </footer>
 
-    <!-- ✅ CORRECCIÓN: Eliminar espacios en la URL de axios -->
+    <!-- CORRECCIÓN: Eliminar espacios en la URL de axios -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="renderer.js"></script>
 </body>
