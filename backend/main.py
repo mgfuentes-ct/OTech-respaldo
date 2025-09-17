@@ -1,4 +1,4 @@
-# backend/main.py
+
 from fastapi import FastAPI, HTTPException, Form
 from models import producto_existe, crear_producto, pieza_existe_por_serie, crear_pieza, registrar_movimiento
 from schemas import RegistroPiezaRequest
@@ -121,7 +121,26 @@ async def login(username: str = Form(...), password: str = Form(...)):
     cursor.close()
     conn.close()
 
-    if not user or not pwd_context.verify(password, user['password_hash']):
+    # ✅ Validar si el usuario existe, está activo y la contraseña es correcta
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    
+    if not user['activo']:
+        raise HTTPException(status_code=401, detail="Usuario inactivo. Contacte al administrador.")
+        print(f"Hash almacenado para {username}: {user['password_hash']}")
+
+    if not pwd_context.verify(password, user['password_hash']):
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    if not user:
+        print(f"❌ Usuario '{username}' no encontrado.")
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+
+    if not user['activo']:
+        print(f"❌ Usuario '{username}' está inactivo.")
+        raise HTTPException(status_code=401, detail="Usuario inactivo. Contacte al administrador.")
+
+    if not pwd_context.verify(password, user['password_hash']):
+        print(f"❌ Contraseña incorrecta para usuario '{username}'.")
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
     # Actualizar último login
@@ -136,7 +155,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
         "id_usuario": user['id_usuario'],
         "nombre": user['nombre'],
         "rol": user['rol'],
-        "token": "mock-token-" + str(user['id_usuario'])  # En producción, usa JWT
+        "token": "mock-token-" + str(user['id_usuario'])
     }
 
 

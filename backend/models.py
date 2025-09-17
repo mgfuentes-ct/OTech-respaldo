@@ -1,4 +1,4 @@
-# backend/models.py
+
 from database import get_db_connection
 import uuid
 

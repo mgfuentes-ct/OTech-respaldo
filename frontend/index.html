@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' ;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;font-src 'self' https://fonts.gstatic.com;img-src 'self' data:;connect-src 'self' http://localhost:8000;">
     <title>OTech Inventario</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
@@ -311,6 +311,12 @@
             <button class="nav-tab" onclick="showSection('registro')">Registrar pieza</button>
             <button class="nav-tab" onclick="showSection('inventario')">Inventario</button>
         </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+            <span id="usuario-nombre" style="font-weight: 500; color: var(--gray-700);"></span>
+            <button onclick="cerrarSesion()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                Cerrar Sesión
+            </button>
+        </div>
     </nav>
 
     <!-- Sección: Registrar Pieza -->
@@ -351,7 +357,7 @@
 
 
         <div id="alertas-stock" style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;">
-            <h3 style="color: #d97706; margin: 0 0 10px 0;">⚠️ Alertas de Stock Bajo</h3>
+            <h3 style="color: #d97706; margin: 0 0 10px 0;">Alertas de Stock Bajo</h3>
             <div id="lista-alertas"></div>
         </div>
     </div>
@@ -432,7 +438,6 @@
         Sistema de inventario OTech — v1.0
     </footer>
 
-    <!-- CORRECCIÓN: Eliminar espacios en la URL de axios -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="renderer.js"></script>
 </body>

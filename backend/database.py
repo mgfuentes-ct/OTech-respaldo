@@ -1,4 +1,4 @@
-# backend/database.py
+
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -8,14 +8,14 @@ load_dotenv()
 
 def get_db_connection():
     try:
-        print("🔌 Intentando conectar a MySQL...")
+        print("Intentando conectar a MySQL...")
         connection = mysql.connector.connect(
             host=os.getenv("DB_HOST", "localhost"),
             user=os.getenv("DB_USER", "root"),
             password=os.getenv("DB_PASSWORD", ""),
             database=os.getenv("DB_NAME", "otech_inventory"),
             autocommit=True,
-            connection_timeout=10  # Timeout de 10 segundos
+            connection_timeout=10  #tiempo de espera de 10 segundos
         )
         if connection.is_connected():
             print("¡Conexión a MySQL ESTABLECIDA!")
