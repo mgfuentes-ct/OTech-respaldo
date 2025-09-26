@@ -16,7 +16,7 @@ function reiniciarTemporizadorInactividad() {
         clearTimeout(timeoutInactividad);
     }
     timeoutInactividad = setTimeout(() => {
-        alert("⚠️ Sesión cerrada por inactividad.");
+        alert("Sesión cerrada por inactividad.");
         cerrarSesion();
     }, 600000); // 10 minutos
 }
@@ -37,13 +37,21 @@ function mostrarNombreUsuario() {
         cerrarSesion();
         return;
     }
-    document.getElementById('usuario-nombre').textContent = `Hola, ${usuario.nombre}`;
+    document.getElementById('usuario-nombre').textContent = `Hola, ${usuario.nombre_usuario}`;
+
+    const btnAdmin = document.getElementById('btn-admin');
+    if (usuario.rol === 'Admin') {
+        btnAdmin.style.display = 'block';
+    } else {
+        btnAdmin.style.display = 'none';
+    }
 }
 
 // Función para cambiar de sección
 function showSection(section) {
     document.getElementById('registro-section').style.display = 'none';
     document.getElementById('inventario-section').style.display = 'none';
+    document.getElementById('administracion-section').style.display = 'none';
 
     document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
 
@@ -57,13 +65,15 @@ function showSection(section) {
 
     const tabs = document.querySelectorAll('.nav-tab');
     tabs.forEach(tab => {
-        if (tab.textContent.trim().toLowerCase().includes(section === 'registro' ? 'registrar' : 'inventario')) {
+            if (tab.textContent.trim().toLowerCase().includes(section === 'registro' ? 'registrar' : section === 'inventario' ? 'inventario' : 'administración')) {
             tab.classList.add('active');
         }
     });
 
     if (section === 'inventario') {
         cargarInventario();
+    } else if (section === 'administracion') {
+        cargarListaUsuarios();
     }
 
     reiniciarTemporizadorInactividad();
@@ -84,6 +94,68 @@ function mostrarResultado(mensaje, tipo, loading = false) {
             behavior: 'smooth'
         });
     }
+}
+
+// Función para registrar nuevo usuario (solo admin)
+
+// Función para cargar lista de usuarios (solo admin)
+async function cargarListaUsuarios() {
+    const loadingDiv = document.getElementById('cargando-usuarios');
+    const tablaDiv = document.getElementById('tabla-usuarios');
+    const tbody = document.getElementById('tbody-usuarios');
+
+    loadingDiv.style.display = 'inline-block';
+    tablaDiv.style.display = 'none';
+
+    try {
+        const response = await axios.get(`${API_URL}/admin/listar_usuarios`);
+        const usuarios = response.data;
+
+        tbody.innerHTML = '';
+
+        if (usuarios.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: #9ca3af;">
+                        No hay usuarios registrados.
+                    </td>
+                </tr>
+            `;
+        } else {
+            usuarios.forEach(u => {
+                const ultimoLogin = u.ultimo_login ? new Date(u.ultimo_login).toLocaleString() : 'Nunca';
+                const activo = u.activo ? 'Sí' : 'No';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${u.id_usuario}</td>
+                    <td>${u.nombre_usuario}</td>
+                    <td>${u.nombre_usuario}</td>
+                    <td><span style="font-weight: 600; color: ${getRolColor(u.rol)};">${u.rol}</span></td>
+                    <td>${ultimoLogin}</td>
+                    <td>${activo}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        loadingDiv.style.display = 'none';
+        tablaDiv.style.display = 'table';
+
+    } catch (error) {
+        console.error("Error al cargar lista de usuarios:", error);
+        loadingDiv.style.display = 'none';
+        tablaDiv.style.display = 'none';
+        alert("Error al cargar lista de usuarios. Verifica la consola.");
+    }
+}
+
+// Función auxiliar para colores de roles
+function getRolColor(rol) {
+    const colores = {
+        'Admin': '#ef4444'
+    };
+    return colores[rol] || '#0f3279ff';
 }
 
 // Función para registrar pieza

@@ -1,18 +1,21 @@
-
 from fastapi import FastAPI, HTTPException, Form
 from models import producto_existe, crear_producto, pieza_existe_por_serie, crear_pieza, registrar_movimiento
 from schemas import RegistroPiezaRequest
 import barcode
 from barcode.writer import ImageWriter
 import os
-
-from database import get_db_connection #importar la conexion a la base de datos
+from database import get_db_connection
+from passlib.context import CryptContext
 
 app = FastAPI(title="OTech Inventory API")
 
 # Crear carpeta para códigos si no existe
 if not os.path.exists("codigos"):
     os.makedirs("codigos")
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# --- Endpoints Principales ---
 
 @app.post("/registrar_pieza")
 async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
@@ -58,9 +61,6 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
 def health_check():
     return {"status": "OK"}
 
-
-# endpoint para obtener todas las piezas en inventario
-
 @app.get("/inventario")
 async def obtener_inventario():
     print("Solicitando /inventario...")
@@ -83,7 +83,7 @@ async def obtener_inventario():
                 p.estado,
                 p.fecha_registro,
                 pr.nombre AS nombre_producto,
-                COALESCE(u.nombre, 'Usuario eliminado') AS usuario_nombre
+                COALESCE(u.nombre_usuario, 'Usuario eliminado') AS nombre_usuario
             FROM pieza p
             LEFT JOIN producto pr ON p.id_producto = pr.id_producto
             LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
@@ -106,41 +106,23 @@ async def obtener_inventario():
         if 'conn' in locals() and conn.is_connected():
             conn.close()
         raise HTTPException(status_code=500, detail=f"Error en consulta SQL: {str(e)}")
-    
-
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @app.post("/login")
 async def login(username: str = Form(...), password: str = Form(...)):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuario WHERE nombre = %s", (username,))
+    cursor.execute("SELECT * FROM usuario WHERE nombre_usuario = %s", (username,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
 
-    # ✅ Validar si el usuario existe, está activo y la contraseña es correcta
     if not user:
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
     
     if not user['activo']:
         raise HTTPException(status_code=401, detail="Usuario inactivo. Contacte al administrador.")
-        print(f"Hash almacenado para {username}: {user['password_hash']}")
 
     if not pwd_context.verify(password, user['password_hash']):
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    if not user:
-        print(f"❌ Usuario '{username}' no encontrado.")
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-
-    if not user['activo']:
-        print(f"❌ Usuario '{username}' está inactivo.")
-        raise HTTPException(status_code=401, detail="Usuario inactivo. Contacte al administrador.")
-
-    if not pwd_context.verify(password, user['password_hash']):
-        print(f"❌ Contraseña incorrecta para usuario '{username}'.")
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
 
     # Actualizar último login
@@ -153,13 +135,10 @@ async def login(username: str = Form(...), password: str = Form(...)):
 
     return {
         "id_usuario": user['id_usuario'],
-        "nombre": user['nombre'],
+        "nombre_usuario": user['nombre_usuario'],
         "rol": user['rol'],
         "token": "mock-token-" + str(user['id_usuario'])
     }
-
-
-# Endpoint para registrar salida de una pieza
 
 @app.post("/registrar_salida")
 async def registrar_salida(id_pieza: int, id_usuario: int, observaciones: str = ""):
@@ -174,14 +153,14 @@ async def registrar_salida(id_pieza: int, id_usuario: int, observaciones: str = 
     if pieza[0] != 'almacenado':
         raise HTTPException(status_code=400, detail="La pieza no está en almacén")
 
-    # 2. ✅ VALIDAR ROL DEL USUARIO
+    # 2. VALIDAR ROL DEL USUARIO
     cursor.execute("SELECT rol FROM usuario WHERE id_usuario = %s", (id_usuario,))
     usuario = cursor.fetchone()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
     rol = usuario[0]
-    if rol not in ['admin', 'salida']:  # Solo admin y salida pueden registrar salidas
+    if rol not in ['admin', 'salida']:
         raise HTTPException(status_code=403, detail="Acceso denegado: no tienes permiso para registrar salidas")
 
     # 3. Actualizar estado
@@ -198,7 +177,6 @@ async def registrar_salida(id_pieza: int, id_usuario: int, observaciones: str = 
     conn.close()
     return {"mensaje": "Salida registrada exitosamente"}
 
-# Endpoint para alertas de stock bajo
 @app.get("/alertas/stock_bajo")
 async def obtener_alertas_stock_bajo():
     conn = get_db_connection()
@@ -220,8 +198,8 @@ async def obtener_alertas_stock_bajo():
     conn.close()
     return alertas
 
+# --- Exportación de Inventario ---
 
-# Endpoint para exportar inventario a Excel
 from fastapi.responses import FileResponse
 import pandas as pd
 import tempfile
@@ -231,18 +209,7 @@ async def exportar_inventario():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT 
-            p.id_pieza,
-            p.codigo_barras,
-            p.numero_serie,
-            p.estado,
-            p.fecha_registro,
-            pr.nombre AS nombre_producto,
-            u.nombre AS usuario_nombre
-        FROM pieza p
-        LEFT JOIN producto pr ON p.id_producto = pr.id_producto
-        LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
-        ORDER BY p.fecha_registro DESC
+        SELECT p.id_pieza, p.codigo_barras, p.numero_serie, p.estado, p.fecha_registro, pr.nombre AS nombre_producto, u.nombre_usuario AS usuario_nombre FROM pieza p LEFT JOIN producto pr ON p.id_producto = pr.id_producto LEFT JOIN usuario u ON p.id_usuario = u.id_usuario ORDER BY p.fecha_registro DESC;
     """)
     piezas = cursor.fetchall()
     cursor.close()
@@ -255,3 +222,28 @@ async def exportar_inventario():
         tmp_path = tmp.name
 
     return FileResponse(tmp_path, filename="inventario_otech.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+
+# --- Endpoints de Administración ---
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+
+@app.get("/admin/listar_usuarios")
+async def listar_usuarios():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT id_usuario, nombre_usuario, nombre_completo, email, rol, activo, ultimo_login 
+        FROM usuario 
+        ORDER BY id_usuario DESC
+    """)
+    usuarios = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return usuarios
+
+#La api esta bien pero no se que falla 

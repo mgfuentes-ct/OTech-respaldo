@@ -310,6 +310,7 @@
         <div class="nav-tabs">
             <button class="nav-tab" onclick="showSection('registro')">Registrar pieza</button>
             <button class="nav-tab" onclick="showSection('inventario')">Inventario</button>
+            <button class="nav-tab" id="btn-admin" onclick="showSection('administracion')" style="display: none;">Administración</button>
         </div>
         <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
             <span id="usuario-nombre" style="font-weight: 500; color: var(--gray-700);"></span>
@@ -434,11 +435,66 @@
         </div>
     </div>
 
-    <footer>
-        Sistema de inventario OTech — v1.0
-    </footer>
+
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="renderer.js"></script>
+
+    <!-- Sección: Administración -->
+    <div id="administracion-section" style="display: none;">
+        <div class="container">
+            <h1>Panel de Administración</h1>
+            <p style="margin-bottom: 24px; color: var(--gray-700);">Registra nuevos usuarios del sistema.</p>
+            
+            <div class="form-group">
+                <label for="admin-nombre">Nombre completo</label>
+                <input type="text" id="admin-nombre" placeholder="Ej: Juan Pérez" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-usuario">Nombre de usuario</label>
+                <input type="text" id="admin-usuario" placeholder="Ej: juanp" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-email">Correo electrónico</label>
+                <input type="email" id="admin-email" placeholder="Ej: juan@otech.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-password">Contraseña</label>
+                <input type="password" id="admin-password" placeholder="Mínimo 6 caracteres" required>
+            </div>
+
+            <button onclick="" style="background: #10b981; color: white;">
+                Registrar Nuevo Usuario
+            </button>
+
+            <div id="resultado-admin" class="result" style="display: none; margin-top: 20px; padding: 15px;"></div>
+
+            <!-- Listado de usuarios (opcional) -->
+            <h2 style="margin-top: 40px;">Usuarios Registrados</h2>
+            <div id="lista-usuarios" style="margin-top: 20px;">
+                <div class="loading-spinner" id="cargando-usuarios" style="display: none;"></div>
+                <table id="tabla-usuarios" style="width: 100%; border-collapse: collapse; margin-top: 20px; display: none;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Último Login</th>
+                            <th>Activo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-usuarios"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>    
+
+    <footer>
+        Sistema de inventario OTech — v1.0
+    </footer>
 </body>
 </html>
