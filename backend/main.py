@@ -246,4 +246,39 @@ async def listar_usuarios():
     conn.close()
     return usuarios
 
-#La api esta bien pero no se que falla 
+
+
+
+# --- Endpoint para crear nuevo usuario (solo admin) ---
+@app.post("/admin/crear_usuario")
+async def crear_usuario_admin(
+    nombre_completo: str,
+    nombre_usuario: str,
+    email: str,
+    password: str
+):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Verificar si nombre_usuario o email ya existen
+    cursor.execute("SELECT * FROM usuario WHERE nombre_usuario = %s OR email = %s", (nombre_usuario, email))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Nombre de usuario o correo ya registrado")
+    
+    # Hashear contraseña
+    password_hash = pwd_context.hash(password)
+    
+    # Insertar con rol fijo 'Operario'
+    cursor.execute("""
+        INSERT INTO usuario (nombre_usuario, nombre_completo, email, rol, activo, password_hash)
+        VALUES (%s, %s, %s, 'Operario', %s, %s)
+    """, (nombre_usuario, nombre_completo, email, True, password_hash))
+    
+    conn.commit()
+    user_id = cursor.lastrowid
+    cursor.close()
+    conn.close()
+    
+    return {
+        "mensaje": f"Usuario '{nombre_completo}' creado exitosamente con rol 'Operario' (ID {user_id})"
+    }

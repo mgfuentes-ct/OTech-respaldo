@@ -16,7 +16,7 @@ function reiniciarTemporizadorInactividad() {
         clearTimeout(timeoutInactividad);
     }
     timeoutInactividad = setTimeout(() => {
-        alert("Sesión cerrada por inactividad.");
+        //alert("Sesión cerrada por inactividad.");  //se quito ya que inactiva los imput una vez que se cierra sesion por inactividad
         cerrarSesion();
     }, 600000); // 10 minutos
 }
@@ -157,6 +157,68 @@ function getRolColor(rol) {
     };
     return colores[rol] || '#0f3279ff';
 }
+
+
+
+// Función para registrar nuevo usuario (solo admin)
+async function registrarNuevoUsuario() {
+    const nombreCompleto = document.getElementById('admin-nombre').value.trim();
+    const nombreUsuario = document.getElementById('admin-usuario').value.trim();
+    const email = document.getElementById('admin-email').value.trim();
+    const password = document.getElementById('admin-password').value.trim();
+
+    const resultadoDiv = document.getElementById('resultado-admin');
+    resultadoDiv.style.display = 'block';
+
+    // Validaciones
+    if (!nombreCompleto || !nombreUsuario || !email || !password) {
+        resultadoDiv.innerHTML = '<p style="color: #ef4444;">❌ Por favor, completa todos los campos.</p>';
+        resultadoDiv.className = 'result error';
+        return;
+    }
+
+    if (password.length < 6) {
+        resultadoDiv.innerHTML = '<p style="color: #ef4444;">❌ La contraseña debe tener al menos 6 caracteres.</p>';
+        resultadoDiv.className = 'result error';
+        return;
+    }
+
+    resultadoDiv.innerHTML = '<p style="color: #6b7280;"> Registrando usuario...</p>';
+    resultadoDiv.className = 'result loading';
+
+    try {
+        const response = await axios.post(`${API_URL}/admin/crear_usuario`, null, {
+            params: {
+                nombre_completo: nombreCompleto,
+                nombre_usuario: nombreUsuario,
+                email: email,
+                password: password
+            }
+        });
+
+
+        resultadoDiv.innerHTML = `<p style="color: #10b981;">${response.data.mensaje}</p>`;
+        resultadoDiv.className = 'result success';
+
+        // Limpiar campos
+        document.getElementById('admin-nombre').value = '';
+        document.getElementById('admin-usuario').value = '';
+        document.getElementById('admin-email').value = '';
+        document.getElementById('admin-password').value = '';
+
+        // Recargar lista
+        cargarListaUsuarios();
+
+    } catch (error) {
+        let mensaje = "❌ Error al registrar usuario.";
+        if (error.response?.data?.detail) {
+            mensaje = `❌ ${error.response.data.detail}`;
+        }
+        resultadoDiv.innerHTML = `<p style="color: #ef4444;">${mensaje}</p>`;
+        resultadoDiv.className = 'result error';
+    }
+}
+
 
 // Función para registrar pieza
 async function registrarPieza() {
@@ -434,3 +496,4 @@ document.getElementById('numeroSerie')?.addEventListener('keypress', function(e)
         registrarPieza();
     }
 });
+
