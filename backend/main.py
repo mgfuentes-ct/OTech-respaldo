@@ -6,6 +6,7 @@ from barcode.writer import ImageWriter
 import os
 from database import get_db_connection
 from passlib.context import CryptContext
+import re 
 
 app = FastAPI(title="OTech Inventory API")
 
@@ -16,6 +17,40 @@ if not os.path.exists("codigos"):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # --- Endpoints Principales ---
+
+@app.post("/login")
+async def login(username: str = Form(...), password: str = Form(...)):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM usuario WHERE nombre_usuario = %s", (username,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    
+    if not user['activo']:
+        raise HTTPException(status_code=401, detail="Usuario inactivo. Contacte al administrador.")
+
+    if not pwd_context.verify(password, user['password_hash']):
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+
+    # Actualizar último login
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE usuario SET ultimo_login = NOW() WHERE id_usuario = %s", (user['id_usuario'],))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        "id_usuario": user['id_usuario'],
+        "nombre_usuario": user['nombre_usuario'],
+        "rol": user['rol'],
+        "token": "mock-token-" + str(user['id_usuario'])
+    }
+
 
 @app.post("/registrar_pieza")
 async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
@@ -107,38 +142,6 @@ async def obtener_inventario():
             conn.close()
         raise HTTPException(status_code=500, detail=f"Error en consulta SQL: {str(e)}")
 
-@app.post("/login")
-async def login(username: str = Form(...), password: str = Form(...)):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuario WHERE nombre_usuario = %s", (username,))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    
-    if not user['activo']:
-        raise HTTPException(status_code=401, detail="Usuario inactivo. Contacte al administrador.")
-
-    if not pwd_context.verify(password, user['password_hash']):
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-
-    # Actualizar último login
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE usuario SET ultimo_login = NOW() WHERE id_usuario = %s", (user['id_usuario'],))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return {
-        "id_usuario": user['id_usuario'],
-        "nombre_usuario": user['nombre_usuario'],
-        "rol": user['rol'],
-        "token": "mock-token-" + str(user['id_usuario'])
-    }
 
 @app.post("/registrar_salida")
 async def registrar_salida(id_pieza: int, id_usuario: int, observaciones: str = ""):
@@ -257,13 +260,22 @@ async def crear_usuario_admin(
     email: str,
     password: str
 ):
+    # ✅ Validar formato de correo electrónico
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        raise HTTPException(status_code=400, detail="Formato de correo electrónico inválido")
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Verificar si nombre_usuario o email ya existen
-    cursor.execute("SELECT * FROM usuario WHERE nombre_usuario = %s OR email = %s", (nombre_usuario, email))
+    # ✅ Verificar duplicados: nombre_usuario, email, nombre_completo
+    cursor.execute("""
+        SELECT * FROM usuario 
+        WHERE nombre_usuario = %s OR email = %s OR nombre_completo = %s
+    """, (nombre_usuario, email, nombre_completo))
+    
     if cursor.fetchone():
-        raise HTTPException(status_code=400, detail="Nombre de usuario o correo ya registrado")
+        raise HTTPException(status_code=400, detail="El nombre de usuario, correo o nombre completo ya están registrados")
     
     # Hashear contraseña
     password_hash = pwd_context.hash(password)
@@ -282,3 +294,123 @@ async def crear_usuario_admin(
     return {
         "mensaje": f"Usuario '{nombre_completo}' creado exitosamente con rol 'Operario' (ID {user_id})"
     }
+
+
+# --- Endpoint para editar usuario (solo admin) ---
+@app.put("/admin/editar_usuario/{id_usuario}")
+async def editar_usuario(
+    id_usuario: int,
+    nombre_completo: str = None,
+    nombre_usuario: str = None,
+    email: str = None,
+    rol: str = None
+):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Verificar que el usuario a editar exista
+    cursor.execute("SELECT * FROM usuario WHERE id_usuario = %s", (id_usuario,))
+    usuario_existente = cursor.fetchone()
+    if not usuario_existente:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Validar rol (solo 'Admin' o 'Operario')
+    if rol and rol not in ['Admin', 'Operario']:
+        raise HTTPException(status_code=400, detail="Rol no válido. Solo 'Admin' o 'Operario'")
+    
+    # Verificar duplicados si se actualiza nombre_usuario o email
+    if nombre_usuario or email:
+        query = "SELECT id_usuario FROM usuario WHERE "
+        params = []
+        conditions = []
+        
+        if nombre_usuario and nombre_usuario != usuario_existente['nombre_usuario']:
+            conditions.append("nombre_usuario = %s")
+            params.append(nombre_usuario)
+        
+        if email and email != usuario_existente['email']:
+            conditions.append("email = %s")
+            params.append(email)
+        
+        if conditions:
+            query += " OR ".join(conditions)
+            query += " AND id_usuario != %s"
+            params.append(id_usuario)
+            
+            cursor.execute(query, params)
+            if cursor.fetchone():
+                raise HTTPException(status_code=400, detail="El nombre de usuario o correo ya están en uso")
+    
+    # Construir consulta de actualización
+    updates = []
+    valores = []
+    
+    if nombre_completo is not None:
+        updates.append("nombre_completo = %s")
+        valores.append(nombre_completo)
+    
+    if nombre_usuario is not None:
+        updates.append("nombre_usuario = %s")
+        valores.append(nombre_usuario)
+    
+    if email is not None:
+        updates.append("email = %s")
+        valores.append(email)
+    
+    if rol is not None:
+        updates.append("rol = %s")
+        valores.append(rol)
+    
+    if not updates:
+        raise HTTPException(status_code=400, detail="No se proporcionaron campos para actualizar")
+    
+    valores.append(id_usuario)
+    query = f"UPDATE usuario SET {', '.join(updates)} WHERE id_usuario = %s"
+    cursor.execute(query, valores)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    return {"mensaje": f"Usuario ID {id_usuario} actualizado exitosamente"}
+
+# --- Endpoint para eliminar lógicamente usuario (solo admin) ---
+@app.put("/admin/eliminar_usuario/{id_usuario}")
+async def eliminar_usuario(id_usuario: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Verificar que el usuario exista
+    cursor.execute("SELECT * FROM usuario WHERE id_usuario = %s", (id_usuario,))
+    usuario = cursor.fetchone()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # No permitir eliminar al propio admin que está realizando la acción
+    # (esto se validaría mejor con autenticación JWT, pero por ahora asumimos que el frontend ya valida esto)
+    
+    # Alternar estado 'activo'
+    nuevo_estado = not usuario['activo']
+    cursor.execute("UPDATE usuario SET activo = %s WHERE id_usuario = %s", (nuevo_estado, id_usuario))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    estado_texto = "activado" if nuevo_estado else "desactivado"
+    return {"mensaje": f"Usuario ID {id_usuario} {estado_texto} exitosamente"}
+
+
+
+
+@app.get("/admin/obtener_usuario/{id_usuario}")
+async def obtener_usuario(id_usuario: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM usuario WHERE id_usuario = %s", (id_usuario,))
+    usuario = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    return usuario

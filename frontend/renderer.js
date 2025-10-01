@@ -4,6 +4,7 @@ const API_URL = 'http://localhost:8000';
 let inventarioCompleto = [];
 let timeoutInactividad;
 
+
 // Función para cerrar sesión
 function cerrarSesion() {
     localStorage.removeItem('usuario');
@@ -96,7 +97,6 @@ function mostrarResultado(mensaje, tipo, loading = false) {
     }
 }
 
-// Función para registrar nuevo usuario (solo admin)
 
 // Función para cargar lista de usuarios (solo admin)
 async function cargarListaUsuarios() {
@@ -116,7 +116,7 @@ async function cargarListaUsuarios() {
         if (usuarios.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 20px; color: #9ca3af;">
+                    <td colspan="8" style="text-align: center; padding: 20px; color: #9ca3af;">
                         No hay usuarios registrados.
                     </td>
                 </tr>
@@ -125,15 +125,30 @@ async function cargarListaUsuarios() {
             usuarios.forEach(u => {
                 const ultimoLogin = u.ultimo_login ? new Date(u.ultimo_login).toLocaleString() : 'Nunca';
                 const activo = u.activo ? 'Sí' : 'No';
+                const estadoClass = u.activo ? 'success' : 'danger';
+
+                // Manejo seguro de nombre_completo
+                const nombreMostrar = u.nombre_completo || u.nombre_usuario || 'Sin nombre';
+                const nombreParaJS = nombreMostrar.replace(/'/g, "\\'");
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${u.id_usuario}</td>
-                    <td>${u.nombre_usuario}</td>
+                    <td>${u.nombre_completo || '—'}</td>
                     <td>${u.nombre_usuario}</td>
                     <td><span style="font-weight: 600; color: ${getRolColor(u.rol)};">${u.rol}</span></td>
                     <td>${ultimoLogin}</td>
-                    <td>${activo}</td>
+                    <td><span class="${estadoClass}">${activo}</span></td>
+                    <td>
+                        <button onclick="editarUsuario(${u.id_usuario})" 
+                                style="padding: 5px 10px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                            Editar
+                        </button>
+                        <button onclick="eliminarUsuario(${u.id_usuario}, '${nombreParaJS}')"
+                                style="padding: 5px 10px; background: ${u.activo ? '#ef4444' : '#10b981'}; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            ${u.activo ? 'Desactivar' : 'Activar'}
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
@@ -155,7 +170,7 @@ function getRolColor(rol) {
     const colores = {
         'Admin': '#ef4444'
     };
-    return colores[rol] || '#0f3279ff';
+    return colores[rol] || '#10275d';
 }
 
 
@@ -216,6 +231,138 @@ async function registrarNuevoUsuario() {
         }
         resultadoDiv.innerHTML = `<p style="color: #ef4444;">${mensaje}</p>`;
         resultadoDiv.className = 'result error';
+    }
+}
+
+
+// Función mejorada para editar usuario
+async function editarUsuario(idUsuario) {
+    try {
+        // Obtener datos actuales del usuario
+        const response = await axios.get(`${API_URL}/admin/obtener_usuario/${idUsuario}`);
+        const usuarioActual = response.data;
+
+        // Verificar si el usuario está intentando editarse a sí mismo
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
+        const esMismoUsuario = usuarioSesion && usuarioSesion.id_usuario === idUsuario;
+
+        // Crear el contenido del modal
+        const { value: formValues } = await Swal.fire({
+            title: 'Editar Usuario',
+            html: `
+                <div style="text-align: left; max-width: 400px; margin: 0 auto;">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 18px;">Nombre completo</label>
+                        <input id="swal-nombre-completo" class="swal2-input" value="${usuarioActual.nombre_completo || ''}" placeholder="Nombre completo" style="width: 90%; height: 40px">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 18px;">Nombre de usuario</label>
+                        <input id="swal-usuario" class="swal2-input" value="${usuarioActual.nombre_usuario || ''}" placeholder="Nombre de usuario" style="width: 90%; height: 40px">
+                        <div id="swal-usuario-feedback" style="font-size: 12px; margin-top: 4px; min-height: 20px;"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 18px;">Correo electrónico</label>
+                        <input id="swal-email" class="swal2-input" type="email" value="${usuarioActual.email || ''}" placeholder="correo@ejemplo.com" style="width: 90%; height: 40px">
+                        <div id="swal-email-feedback" style="font-size: 12px; margin-top: 4px; min-height: 20px;"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 18px;">Rol</label>
+                        <select id="swal-rol" class="swal2-select" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; height: 44px; width: 90%;">
+                            <option value="Operario" ${usuarioActual.rol === 'Operario' ? 'selected' : ''}>Operario</option>
+                            <option value="Admin" ${usuarioActual.rol === 'Admin' ? 'selected' : ''}>Administrador</option>
+                        </select>
+                        ${esMismoUsuario ? '<p style="font-size: 10px; color: #f59e0b; margin-top: 8px;">⚠️ No puedes cambiar tu propio rol.</p>' : ''}
+                    </div>
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Cambios',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                const nombreCompleto = document.getElementById('swal-nombre-completo').value.trim();
+                const nombreUsuario = document.getElementById('swal-usuario').value.trim();
+                const email = document.getElementById('swal-email').value.trim();
+                const rol = document.getElementById('swal-rol').value;
+
+                // Validaciones
+                if (!nombreCompleto) {
+                    Swal.showValidationMessage('El nombre completo es obligatorio');
+                    return;
+                }
+                if (!nombreUsuario) {
+                    Swal.showValidationMessage('El nombre de usuario es obligatorio');
+                    return;
+                }
+                if (!email) {
+                    Swal.showValidationMessage('El correo electrónico es obligatorio');
+                    return;
+                }
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    Swal.showValidationMessage('Formato de correo inválido');
+                    return;
+                }
+
+                // Si es el mismo usuario, no permitir cambiar el rol
+                if (esMismoUsuario && rol !== usuarioActual.rol) {
+                    Swal.showValidationMessage('No puedes cambiar tu propio rol');
+                    return;
+                }
+
+                return { nombreCompleto, nombreUsuario, email, rol };
+            }
+        });
+
+        if (formValues) {
+            // Verificar unicidad de nombre de usuario y email (solo si cambiaron)
+            const cambios = {};
+            if (formValues.nombreCompleto !== usuarioActual.nombre_completo) 
+                cambios.nombre_completo = formValues.nombreCompleto;
+            if (formValues.nombreUsuario !== usuarioActual.nombre_usuario) 
+                cambios.nombre_usuario = formValues.nombreUsuario;
+            if (formValues.email !== usuarioActual.email) 
+                cambios.email = formValues.email;
+            if (formValues.rol !== usuarioActual.rol) 
+                cambios.rol = formValues.rol;
+
+            if (Object.keys(cambios).length === 0) {
+                Swal.fire('Sin cambios', 'No se realizaron modificaciones.', 'info');
+                return;
+            }
+
+            // Enviar actualización
+            await axios.put(`${API_URL}/admin/editar_usuario/${idUsuario}`, null, {
+                params: cambios
+            });
+
+            Swal.fire('¡Éxito!', 'Usuario actualizado correctamente.', 'success');
+            cargarListaUsuarios(); // Recargar la tabla
+        }
+    } catch (error) {
+        console.error("Error al editar usuario:", error);
+        Swal.fire('Error', error.response?.data?.detail || 'No se pudo editar el usuario.', 'error');
+    }
+}
+
+
+
+// Función para eliminar lógicamente usuario
+async function eliminarUsuario(idUsuario, nombreCompleto) {
+    if (!confirm(`¿Está seguro de ${nombreCompleto} (ID: ${idUsuario})?`)) {
+        return;
+    }
+
+    try {
+        const response = await axios.put(`${API_URL}/admin/eliminar_usuario/${idUsuario}`);
+        alert(response.data.mensaje);
+        cargarListaUsuarios(); // Recargar la tabla
+    } catch (error) {
+        let mensaje = "❌ Error al eliminar usuario.";
+        if (error.response?.data?.detail) {
+            mensaje = `❌ ${error.response.data.detail}`;
+        }
+        alert(mensaje);
     }
 }
 
@@ -321,6 +468,7 @@ async function cargarInventario() {
     try {
         const response = await axios.get(`${API_URL}/inventario`);
         inventarioCompleto = response.data;
+        console.log("Datos del inventario:", inventarioCompleto);
 
         if (filtroProducto) {
             filtroProducto.innerHTML = '<option value="">Todos los productos</option>';
@@ -397,8 +545,7 @@ function aplicarFiltros() {
                 <td>${pieza.nombre_producto}</td>
                 <td><span class="${estadoClass}">${pieza.estado}</span></td>
                 <td>${fecha}</td>
-                <td>${pieza.usuario_nombre || 'N/A'}</td>
-                <td>${botonSalida}</td>
+                <td>${pieza.nombre_usuario || 'N/A'}</td>
             `;
             tbody.appendChild(row);
         });
@@ -496,4 +643,6 @@ document.getElementById('numeroSerie')?.addEventListener('keypress', function(e)
         registrarPieza();
     }
 });
+
+
 
