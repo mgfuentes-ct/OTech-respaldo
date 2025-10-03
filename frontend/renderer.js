@@ -116,7 +116,7 @@ async function cargarListaUsuarios() {
         if (usuarios.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 20px; color: #9ca3af;">
+                    <td colspan="8" style="text-align: center; padding: 20px; color: #96a6c3ff;">
                         No hay usuarios registrados.
                     </td>
                 </tr>
@@ -140,10 +140,10 @@ async function cargarListaUsuarios() {
                     <td>${ultimoLogin}</td>
                     <td><span class="${estadoClass}">${activo}</span></td>
                     <td>
-                        <button onclick="editarUsuario(${u.id_usuario})" 
-                                style="padding: 5px 10px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                        <a href="editar-usuario.html?id=${u.id_usuario}" 
+                        style="display: inline-block; padding: 5px 10px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; margin-right: 5px;  width: 100%; text-align: center; font-weight: 650;">
                             Editar
-                        </button>
+                        </a>
                         <button onclick="eliminarUsuario(${u.id_usuario}, '${nombreParaJS}')"
                                 style="padding: 5px 10px; background: ${u.activo ? '#ef4444' : '#10b981'}; color: white; border: none; border-radius: 6px; cursor: pointer;">
                             ${u.activo ? 'Desactivar' : 'Activar'}
@@ -358,9 +358,9 @@ async function eliminarUsuario(idUsuario, nombreCompleto) {
         alert(response.data.mensaje);
         cargarListaUsuarios(); // Recargar la tabla
     } catch (error) {
-        let mensaje = "❌ Error al eliminar usuario.";
+        let mensaje = "Error al eliminar usuario.";
         if (error.response?.data?.detail) {
-            mensaje = `❌ ${error.response.data.detail}`;
+            mensaje = `${error.response.data.detail}`;
         }
         alert(mensaje);
     }
@@ -411,7 +411,7 @@ async function registrarPieza() {
         `;
 
         mostrarResultado(`
-            <h3>✅ Éxito</h3>
+            <h3>Éxito</h3>
             <p><strong>Código OTech:</strong> ${data.codigo_otech}</p>
             <div class="barcode-container">
                 <img src="${data.ruta_etiqueta}" alt="Código de barras">
@@ -419,7 +419,7 @@ async function registrarPieza() {
             <p>Etiqueta generada e impresa automáticamente.</p>
             <button onclick="window.electronAPI.imprimirContenido(\`${contenidoEtiqueta.replace(/`/g, '\\`')}\`)" 
                     style="margin-top: 15px; padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                🖨️ Reimprimir Etiqueta
+                Reimprimir Etiqueta
             </button>
         `, "success");
 
@@ -441,11 +441,11 @@ async function registrarPieza() {
 
         if (error.response?.data?.detail === "Nombre del producto requerido para nuevo producto") {
             document.getElementById('camposProducto').style.display = 'block';
-            mensaje = "⚠️ Este producto no existe. Completa los datos abajo y vuelve a intentar.";
+            mensaje = "Este producto no existe. Completa los datos abajo y vuelve a intentar.";
         } else if (error.response?.data?.detail === "Número de serie ya registrado") {
-            mensaje = "⚠️ ¡Error! Este número de serie ya está registrado.";
+            mensaje = "¡Error! Este número de serie ya está registrado.";
         } else {
-            mensaje = `❌ Error: ${error.message}`;
+            mensaje = `Error: ${error.message}`;
         }
 
         mostrarResultado(mensaje, tipo);
@@ -599,10 +599,10 @@ async function registrarSalida(idPieza) {
             observaciones: prompt("Observaciones (opcional):", "")
         });
 
-        alert("✅ Salida registrada correctamente.");
+        alert("Salida registrada correctamente.");
         cargarInventario();
     } catch (error) {
-        alert("❌ Error al registrar salida: " + error.message);
+        alert("Error al registrar salida: " + error.message);
     }
 }
 

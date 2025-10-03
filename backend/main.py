@@ -241,7 +241,7 @@ async def listar_usuarios():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT id_usuario, nombre_usuario, nombre_completo, email, rol, activo, ultimo_login 
-        FROM usuario 
+        FROM usuario WHERE activo = 1
         ORDER BY id_usuario DESC
     """)
     usuarios = cursor.fetchall()
@@ -260,7 +260,7 @@ async def crear_usuario_admin(
     email: str,
     password: str
 ):
-    # ✅ Validar formato de correo electrónico
+    # Validar formato de correo electrónico
     email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_regex, email):
         raise HTTPException(status_code=400, detail="Formato de correo electrónico inválido")
@@ -268,7 +268,7 @@ async def crear_usuario_admin(
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # ✅ Verificar duplicados: nombre_usuario, email, nombre_completo
+    # Verificar duplicados: nombre_usuario, email, nombre_completo
     cursor.execute("""
         SELECT * FROM usuario 
         WHERE nombre_usuario = %s OR email = %s OR nombre_completo = %s

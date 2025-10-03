@@ -245,8 +245,12 @@
             font-weight: 600;
             color: var(--gray-700);
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 14px;
             letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 16px;
         }
 
         tr:hover {
@@ -444,33 +448,13 @@
     <div id="administracion-section" style="display: none;">
         <div class="container">
             <h1>Panel de Administración</h1>
-            <p style="margin-bottom: 24px; color: var(--gray-700);">Registra nuevos usuarios del sistema.</p>
             
-            <div class="form-group">
-                <label for="admin-nombre">Nombre completo</label>
-                <input type="text" id="admin-nombre" placeholder="Ej: Juan Pérez" required>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+                <a href="crear-usuario.html" style="display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Crear Nuevo Usuario
+                </a>
             </div>
-
-            <div class="form-group">
-                <label for="admin-usuario">Nombre de usuario</label>
-                <input type="text" id="admin-usuario" placeholder="Ej: juanp" required>
-            </div>
-
-            <div class="form-group">
-                <label for="admin-email">Correo electrónico</label>
-                <input type="email" id="admin-email" placeholder="Ej: juan@otech.com" required>
-            </div>
-
-            <div class="form-group">
-                <label for="admin-password">Contraseña</label>
-                <input type="password" id="admin-password" placeholder="Mínimo 6 caracteres" required>
-            </div>
-
-            <button onclick="registrarNuevoUsuario()" style="background: #10b981; color: white;">
-                Registrar Nuevo Usuario
-            </button>
-
-            <div id="resultado-admin" class="result" style="display: none; margin-top: 20px; padding: 15px;"></div>
 
             <!-- Listado de usuarios (opcional) -->
             <h2 style="margin-top: 40px;">Usuarios Registrados</h2>
