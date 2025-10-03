@@ -137,6 +137,10 @@
             <label for="admin-password">Contraseña</label>
             <input type="password" id="admin-password" placeholder="Mínimo 6 caracteres" required>
         </div>
+        <div class="form-group">
+            <label for="admin-password-confirm">Confirmar contraseña</label>
+            <input type="password" id="admin-password-confirm" placeholder="Repite la contraseña" required>
+        </div>
 
         <button onclick="registrarNuevoUsuario()">Guardar Usuario</button>
         <a href="index.html" class="back-link">← Volver al Inventario</a>
@@ -153,14 +157,21 @@
             const nombreUsuario = document.getElementById('admin-usuario').value.trim();
             const email = document.getElementById('admin-email').value.trim();
             const password = document.getElementById('admin-password').value.trim();
+            const passwordConfirm = document.getElementById('admin-password-confirm').value.trim();
 
             // Validaciones
-            if (!nombreCompleto || !nombreUsuario || !email || !password) {
+            if (!nombreCompleto || !nombreUsuario || !email || !password || !passwordConfirm) {
                 Swal.fire('Error', 'Por favor, completa todos los campos.', 'error');
                 return;
             }
+
             if (password.length < 6) {
                 Swal.fire('Error', 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                Swal.fire('Error', 'Las contraseñas no coinciden.', 'error');
                 return;
             }
 
@@ -173,7 +184,6 @@
                         password: password
                     }
                 });
-
                 Swal.fire({
                     title: '¡Éxito!',
                     text: response.data.mensaje,
@@ -182,7 +192,6 @@
                 }).then(() => {
                     window.location.href = 'index.html';
                 });
-
             } catch (error) {
                 let mensaje = "Error al registrar usuario.";
                 if (error.response?.data?.detail) {
