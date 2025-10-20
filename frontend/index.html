@@ -6,6 +6,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;font-src 'self' https://fonts.gstatic.com;img-src 'self' data:;connect-src 'self' http://localhost:8000;">
     <title>OTech Inventario</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --primary: #163f97;
@@ -387,11 +388,9 @@
                         <select id="filtro-estado" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
                             <option value="">Todos los estados</option>
                             <option value="Nuevo">Nuevo</option>
-                            <option value="Almacenado">Almacenado</option>
-                            <option value="En uso">En uso</option>
-                            <option value="Mantenimiento">Mantenimiento</option>
-                            <option value="Salida">Salida</option>
-                            <option value="Baja">Baja</option>
+                            <option value="Venta">Venta</option>
+                            <option value="Garantia">Garantía</option>
+                            <option value="Reparacion">Reparación</option>
                         </select>
                     </div>
 
@@ -403,7 +402,7 @@
                             <!-- Opciones se llenarán dinámicamente -->
                         </select>
                     </div>
-                    <button onclick="exportarInventario()" style="margin: 20px 0; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <button id="btn-exportar" onclick="exportarInventario()" style="margin: 20px 0; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">
                         Exportar a Excel
                     </button>
                 </div>

@@ -7,6 +7,7 @@ import os
 from database import get_db_connection
 from passlib.context import CryptContext
 import re 
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 app = FastAPI(title="OTech Inventory API")
 
@@ -206,26 +207,129 @@ async def obtener_alertas_stock_bajo():
 from fastapi.responses import FileResponse
 import pandas as pd
 import tempfile
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import pandas as pd
+from io import BytesIO
+from datetime import datetime
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Font
 
 @app.get("/exportar/inventario")
 async def exportar_inventario():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT p.id_pieza, p.codigo_barras, p.numero_serie, p.estado, p.fecha_registro, pr.nombre AS nombre_producto, u.nombre_usuario AS usuario_nombre FROM pieza p LEFT JOIN producto pr ON p.id_producto = pr.id_producto LEFT JOIN usuario u ON p.id_usuario = u.id_usuario ORDER BY p.fecha_registro DESC;
-    """)
-    piezas = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT 
+                p.id_pieza, 
+                p.codigo_barras, 
+                p.numero_serie, 
+                p.estado, 
+                p.fecha_registro,
+                pr.nombre AS nombre_producto,
+                u.nombre_usuario AS usuario_nombre
+            FROM pieza p
+            LEFT JOIN producto pr ON p.id_producto = pr.id_producto
+            LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
+            ORDER BY p.fecha_registro DESC;
+        """)
+        piezas = cursor.fetchall()
+        cursor.close()
+        conn.close()
 
-    # Crear DataFrame
-    df = pd.DataFrame(piezas)
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
-        df.to_excel(tmp.name, index=False, engine='openpyxl')
-        tmp_path = tmp.name
+        # Definir columnas explícitamente
+        columnas = ['id_pieza', 'codigo_barras', 'numero_serie', 'estado', 'fecha_registro', 'nombre_producto', 'usuario_nombre']
+        if not piezas:
+            df = pd.DataFrame(columns=columnas)
+        else:
+            df = pd.DataFrame(piezas, columns=columnas)
 
-    return FileResponse(tmp_path, filename="inventario_otech.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        # Reemplazar NaN/None por cadenas vacías
+        df = df.fillna("")
 
+        # Formatear fecha de forma segura
+        if 'fecha_registro' in df.columns:
+            df['fecha_registro'] = pd.to_datetime(df['fecha_registro'], errors='coerce')
+            df['fecha_registro'] = df['fecha_registro'].apply(
+                lambda x: x.strftime('%d/%m/%Y %H:%M') if pd.notna(x) else ""
+            )
+
+        # Renombrar columnas
+        df.rename(columns={
+            'id_pieza': 'ID Pieza',
+            'codigo_barras': 'Código de Barras',
+            'numero_serie': 'N° Serie',
+            'estado': 'Estado',
+            'fecha_registro': 'Fecha Registro',
+            'nombre_producto': 'Producto',
+            'usuario_nombre': 'Registrado por'
+        }, inplace=True)
+
+        # Crear Excel con formato profesional
+        output = BytesIO()
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Inventario"
+
+        # Estilos
+        header_font = Font(name='Calibri', bold=True, size=12, color="FFFFFF")
+        header_fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
+        body_font = Font(name='Calibri', size=11)
+        alignment_center = Alignment(horizontal="center", vertical="center")
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Escribir encabezados
+        headers = list(df.columns)
+        for col_idx, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = alignment_center
+            cell.border = thin_border
+
+        # Escribir filas
+        for row_idx, row in enumerate(df.itertuples(index=False), 2):
+            for col_idx, value in enumerate(row, 1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=str(value))  # ← Conversión segura a str
+                cell.font = body_font
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                cell.border = thin_border
+
+        # Ajustar ancho
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 40)
+            ws.column_dimensions[column].width = adjusted_width
+
+        ws.sheet_view.showGridLines = False
+        wb.save(output)
+        output.seek(0)
+
+        filename = f"inventario_otech_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except Exception as e:
+        # ¡IMPORTANTE! Esto te ayudará a depurar
+        print("Error en /exportar/inventario:", str(e))
+        raise
 
 
 # --- Endpoints de Administración ---

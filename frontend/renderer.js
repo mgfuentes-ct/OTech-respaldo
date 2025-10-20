@@ -607,9 +607,95 @@ async function registrarSalida(idPieza) {
 }
 
 // Función para exportar inventario
-function exportarInventario() {
-    window.open(`${API_URL}/exportar/inventario`, '_blank');
+async function exportarInventario() {
+    const boton = document.getElementById('btn-exportar');
+    if (boton) {
+        boton.disabled = true;
+        boton.textContent = 'Exportando...';
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/exportar/inventario`);
+
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'inventario_otech.xlsx';
+        document.body.appendChild(a);
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Éxito con Swal
+        Swal.fire({
+            icon: 'success',
+            title: '¡Listo!',
+            text: 'El inventario se ha exportado correctamente.',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            customClass: {
+                popup: 'swal2-toast'
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al exportar inventario:', error);
+
+        // Error con Swal
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo exportar el inventario. Por favor, inténtalo de nuevo.',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#ef4444'
+        });
+    } finally {
+        if (boton) {
+            boton.disabled = false;
+            boton.textContent = 'Exportar a Excel';
+        }
+    }
 }
+
+
+
+function mostrarNotificacion(mensaje, tipo) {
+    const notif = document.createElement('div');
+    notif.textContent = mensaje;
+    notif.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${tipo === 'success' ? '#4caf50' : '#f44336'};
+        color: white;
+        border-radius: 6px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    `;
+    document.body.appendChild(notif);
+
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        notif.style.transition = 'opacity 0.3s';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
+}
+
+
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
