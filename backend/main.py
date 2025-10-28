@@ -192,7 +192,7 @@ async def obtener_alertas_stock_bajo():
             p.stock_minimo,
             COUNT(pi.id_pieza) as stock_actual
         FROM producto p
-        LEFT JOIN pieza pi ON p.id_producto = pi.id_producto AND pi.estado = 'almacenado'
+        LEFT JOIN pieza pi ON p.id_producto = pi.id_producto AND pi.estado = 'Nuevo'
         WHERE p.stock_minimo > 0
         GROUP BY p.id_producto, p.nombre, p.stock_minimo
         HAVING stock_actual < p.stock_minimo
@@ -398,6 +398,47 @@ async def crear_usuario_admin(
     return {
         "mensaje": f"Usuario '{nombre_completo}' creado exitosamente con rol 'Operario' (ID {user_id})"
     }
+
+
+
+
+# --- Endpoint para crear nuevo producto (solo admin) ---
+@app.post("/admin/crear_producto")
+async def crear_producto_admin(
+    codigo_original: str,
+    nombre: str,
+    descripcion: str,
+    categoria: str,
+    stock_minimo: int
+):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Verificar duplicados: nombre
+    cursor.execute("""
+        SELECT * FROM producto
+        WHERE nombre = %s
+    """, (nombre,))
+
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="El producto ya está registrado")
+
+    # Insertar nuevo producto
+    cursor.execute("""
+        INSERT INTO producto (codigo_original,nombre, descripcion, categoria, stock_minimo)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (codigo_original, nombre, descripcion, categoria, stock_minimo))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": f"Producto '{nombre}' creado exitosamente"
+    }
+
+
+
 
 
 # --- Endpoint para editar usuario (solo admin) ---

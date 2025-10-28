@@ -165,6 +165,60 @@ async function cargarListaUsuarios() {
     }
 }
 
+
+// Función para crear un nuevo producto (solo admin)
+async function registrarNuevoProducto() {
+    const codigo = document.getElementById('codigo-producto').value.trim();
+    const nombre = document.getElementById('nombre-producto').value.trim();
+    const descripcion = document.getElementById('descripcion-producto').value.trim();
+    const categoria = document.getElementById('categoria-producto').value.trim();
+    const stockMinimo = document.getElementById('stock-minimo').value.trim();
+
+    const resultadoDiv = document.getElementById('resultado-admin');
+    resultadoDiv.style.display = 'block';
+
+    // Validaciones
+    
+
+    resultadoDiv.innerHTML = '<p style="color: #6b7280;"> Registrando Producto...</p>';
+    resultadoDiv.className = 'result loading';
+
+    try {
+        const response = await axios.post(`${API_URL}/admin/crear_producto`, null, {
+            params: {
+                codigo_original: codigo,
+                nombre: nombre,
+                descripcion: descripcion,
+                categoria: categoria,
+                stock_minimo: stockMinimo
+            }
+        });
+
+
+        resultadoDiv.innerHTML = `<p style="color: #10b981;">${response.data.mensaje}</p>`;
+        resultadoDiv.className = 'result success';
+
+        // Limpiar campos
+        document.getElementById('codigo-producto').value = '';
+        document.getElementById('nombre-producto').value = '';
+        document.getElementById('descripcion-producto').value = '';
+        document.getElementById('categoria-producto').value = '';
+        document.getElementById('stock-minimo').value = '';
+
+        // Recargar lista
+        cargarListaUsuarios();
+
+    } catch (error) {
+        let mensaje = "❌ Error al registrar el producto.";
+        if (error.response?.data?.detail) {
+            mensaje = `❌ ${error.response.data.detail}`;
+        }
+        resultadoDiv.innerHTML = `<p style="color: #ef4444;">${mensaje}</p>`;
+        resultadoDiv.className = 'result error';
+    }
+}
+
+
 // Función auxiliar para colores de roles
 function getRolColor(rol) {
     const colores = {
@@ -557,18 +611,34 @@ async function cargarAlertasStock() {
     try {
         const response = await axios.get(`${API_URL}/alertas/stock_bajo`);
         const alertas = response.data;
+
         const alertasDiv = document.getElementById('alertas-stock');
         const listaDiv = document.getElementById('lista-alertas');
 
         if (!alertasDiv || !listaDiv) return;
 
         if (alertas.length > 0) {
+            // Mostrar en la página
             alertasDiv.style.display = 'block';
-            listaDiv.innerHTML = alertas.map(a => 
-                `<p style="margin: 8px 0; padding: 8px; background: #fef3c7; border-left: 4px solid #d97706; border-radius: 4px;">
-                    <strong>${a.nombre}:</strong> Stock actual: <strong>${a.stock_actual}</strong>, Mínimo requerido: <strong>${a.stock_minimo}</strong>
-                </p>`
-            ).join('');
+
+            // Generar lista para el HTML interno
+            
+
+            // Mostrar SweetAlert MODAL
+            const listaTexto = alertas.map(a => 
+                `${a.nombre} quedan: ${a.stock_actual}`
+            ).join('\n');
+
+            Swal.fire({
+                title: 'Alerta de Stock Bajo',
+                text: 'Los siguientes productos están por debajo del stock mínimo:',
+                html: `<p>Los siguientes productos están por debajo del stock mínimo:</p><pre style="text-align: left; background: #f8fafc; padding: 12px; border-radius: 6px; margin-top: 10px;">${listaTexto}</pre>`,
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#f59e0b',
+                
+            });
+
         } else {
             alertasDiv.style.display = 'none';
         }
@@ -578,6 +648,13 @@ async function cargarAlertasStock() {
         if (alertasDiv) {
             alertasDiv.style.display = 'none';
         }
+
+        // Manejo de error con SweetAlert (igual que en tu estilo)
+        let mensaje = "No se pudieron cargar las alertas de stock.";
+        if (error.response?.data?.detail) {
+            mensaje = error.response.data.detail;
+        }
+        Swal.fire('Error', mensaje, 'error');
     }
 }
 

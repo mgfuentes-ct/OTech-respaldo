@@ -305,13 +305,57 @@
         #registro-section {
             display: block;
         }
+
+        .alerta-stock-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin: 8px 0;
+            border-left: 4px solid #d97706;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .alerta-stock-item[data-criticidad="alta"] {
+            border-left-color: #dc2626;
+            background-color: #fef2f2;
+        }
+
+        .alerta-icon {
+            font-size: 1.2em;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .alerta-contenido {
+            flex: 1;
+        }
+
+        .alerta-contenido strong {
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .alerta-detalles {
+            display: flex;
+            gap: 12px;
+            margin-top: 4px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .faltante {
+            color: #dc2626;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 
     <!-- Barra de navegación -->
     <nav class="navbar">
-        <a href="#" class="navbar-brand">OTech inventario</a>
+        <a href="#" onclick="showSection('registro')" class="navbar-brand">OTech inventario</a>
         <div class="nav-tabs">
             <button class="nav-tab" onclick="showSection('registro')">Registrar pieza</button>
             <button class="nav-tab" onclick="showSection('inventario')">Inventario</button>
@@ -330,14 +374,14 @@
         <div class="container">
             <h1>Registro de Piezas</h1>
 
-            <!--<div class="form-group">
+            <div class="form-group">
                 <label for="codigoOriginal">Código original (QR / Barras)</label>
                 <input type="text" id="codigoOriginal" placeholder="Escanee o ingrese el código del fabricante" autofocus>
-            </div>-->
+            </div>
 
             <div class="form-group">
                 <label for="numeroSerie">Número de serie</label>
-                <input type="text" id="numeroSerie" placeholder="Escanee o ingrese el número de serie único">
+                <input type="text" id="numeroSerie" placeholder="Escanee o ingrese el número de serie único" autofocus>
             </div>
 
             <div id="camposProducto">
@@ -362,8 +406,8 @@
         </div>
 
 
-        <div id="alertas-stock" style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;">
-            <h3 style="color: #d97706; margin: 0 0 10px 0;">Alertas de Stock Bajo</h3>
+        <div id="alertas-stock" >
+            <!--<h3 style="color: #d97706; margin: 0 0 10px 0;">Alertas de Stock Bajo</h3>-->
             <div id="lista-alertas"></div>
         </div>
     </div>
@@ -451,7 +495,10 @@
 
             <div style="text-align: center; margin-bottom: 30px;">
                 <a href="crear-usuario.html" style="display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Crear Nuevo Usuario
+                    Nuevo usuario
+                </a>
+                <a href="crear-producto.html" style="display: inline-block; padding: 12px 24px; background: #15347d; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    Nuevo producto
                 </a>
             </div>
 
