@@ -134,8 +134,11 @@
             <input type="text" id="descripcion-producto" placeholder="Ej: Bateria inteligente T25P DB800" required>
         </div>
         <div class="form-group">
-            <label for="categoria-producto">Categoria</label>
-            <input type="text" id="categoria-producto" placeholder="Ej: Bateria" required>
+            <label for="dron-producto">Modelo de Dron</label>
+            <select id="dron-producto" required>
+                <option value="">Selecciona un modelo</option>
+                <!-- Se llenará automaticamente -->
+            </select>
         </div>
         <div class="form-group">
             <label for="stock-minimo">Stock minimo</label>
@@ -152,15 +155,31 @@
     <script>
         const API_URL = 'http://localhost:8000';
 
+        async function cargarDrones() {
+            try {
+                const res = await axios.get(`${API_URL}/admin/listar_drones`);
+                const select = document.getElementById('dron-producto');
+                res.data.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.nombre;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Error al cargar drones:", err);
+            }
+        }
+        cargarDrones();
+
         async function registrarNuevoProducto() {
             const codigo = document.getElementById('codigo-producto').value.trim();
             const nombre = document.getElementById('nombre-producto').value.trim();
             const descripcion = document.getElementById('descripcion-producto').value.trim();
-            const categoria = document.getElementById('categoria-producto').value.trim();
+            const idDron = document.getElementById('dron-producto').value;
             const stockMinimo = document.getElementById('stock-minimo').value.trim();
 
             // Validaciones
-            if (!codigo || !nombre || !descripcion || !categoria || !stockMinimo) {
+            if (!codigo || !nombre || !descripcion || !idDron || !stockMinimo) {
                 Swal.fire('Error', 'Por favor, completa todos los campos.', 'error');
                 return;
             }
@@ -176,7 +195,7 @@
                         codigo_original: codigo,
                         nombre: nombre,
                         descripcion: descripcion,
-                        categoria: categoria,
+                        id_dron: idDron,
                         stock_minimo: stockMinimo
                     }
                 });

@@ -97,6 +97,227 @@ function mostrarResultado(mensaje, tipo, loading = false) {
     }
 }
 
+// -- Logica de escaneo y acciones -- 
+
+async function buscarCodigo() {
+    const codigoEscaneado = document.getElementById('codigoEscaneado').value.trim();
+    if (!codigoEscaneado) {
+        mostrarResultado("Por favor, ingresa o escanea un código.", "error");
+        return;
+    }
+    mostrarResultado("Buscando...", "loading", true);
+
+    try {
+        // Endpoint que determina qué tipo de código es y devuelve los datos correspondientes
+        const response = await axios.post(`${API_URL}/buscar_codigo`, { codigo: codigoEscaneado });
+        const resultado = response.data;
+
+        // Limpiar campos y secciones
+        resetearFormulario();
+
+        if (resultado.tipo === 'pieza') {
+            // Mostrar interfaz de actualización de estado
+            document.getElementById('datos-pieza-encontrada').style.display = 'block';
+            document.getElementById('btnActualizarEstado').style.display = 'block';
+
+            document.getElementById('nombre-producto-encontrado').value = resultado.pieza.nombre_producto || 'N/A';
+            document.getElementById('numero-serie-encontrado').value = resultado.pieza.numero_serie;
+            document.getElementById('estado-actual-encontrado').value = resultado.pieza.estado;
+            document.getElementById('id-pieza-oculto').value = resultado.pieza.id_pieza;
+            document.getElementById('caja-pieza-encontrada').value = resultado.pieza.caja || 'N/A';
+
+        } else if (resultado.tipo === 'producto') {
+            // Mostrar interfaz de registro de nueva pieza con datos pre-rellenados
+            document.getElementById('datos-nueva-pieza').style.display = 'block';
+            document.getElementById('btnRegistrarPieza').style.display = 'block';
+
+            document.getElementById('codigo-original-nueva').value = resultado.producto.codigo_original;
+            document.getElementById('nombre-producto-nueva').value = resultado.producto.nombre;
+            document.getElementById('descripcion-producto-nueva').value = resultado.producto.descripcion || '';
+            // Asignar id_dron si es necesario
+            if (resultado.producto.id_dron) {
+                // Suponiendo que tienes un select para drones en la sección de nueva pieza
+                // document.getElementById('dron-nueva').value = resultado.producto.id_dron;
+            }
+
+        } else {
+            // Mostrar interfaz para crear nuevo producto y luego registrar pieza
+            document.getElementById('camposProducto').style.display = 'block';
+            document.getElementById('btnRegistrarPieza').style.display = 'block';
+            document.getElementById('codigo-original-nueva').value = codigoEscaneado; // Prellenar con el código escaneado
+        }
+
+        document.getElementById('resultado').style.display = 'none'; // Ocultar mensaje de búsqueda
+
+    } catch (error) {
+        console.error("Error al buscar código:", error);
+        let mensaje = "Error al buscar el código.";
+        if (error.response?.data?.detail) {
+            mensaje = error.response.data.detail;
+        }
+        mostrarResultado(mensaje, "error");
+    }
+}
+
+
+async function actualizarEstadoPieza() {
+    const idPieza = document.getElementById('id-pieza-oculto').value;
+    const nuevoEstado = document.getElementById('nuevo-estado').value;
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const observaciones = document.getElementById('observaciones-estado').value.trim();
+
+    if (!idPieza || !nuevoEstado || !usuario) {
+        mostrarResultado("Faltan datos para actualizar el estado.", "error");
+        return;
+    }
+
+    mostrarResultado("Actualizando estado...", "loading", true);
+
+    try {
+        await axios.post(`${API_URL}/actualizar_estado_pieza`, {
+            id_pieza: idPieza,
+            nuevo_estado: nuevoEstado,
+            id_usuario: usuario.id_usuario,
+            observaciones: observaciones
+        });
+
+        // Mostrar éxito y limpiar
+        mostrarResultado(`Estado actualizado a: ${nuevoEstado}`, "success");
+        setTimeout(() => {
+            resetearFormulario();
+            document.getElementById('codigoEscaneado').focus(); // Volver a enfocar escaneo
+        }, 2000);
+
+    } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        let mensaje = "Error al actualizar el estado.";
+        if (error.response?.data?.detail) {
+            mensaje = error.response.data.detail;
+        }
+        mostrarResultado(mensaje, "error");
+    }
+}
+
+
+async function registrarPiezaNueva() {
+    const codigoOriginal = document.getElementById('codigo-original-nueva').value.trim();
+    const numeroSerie = document.getElementById('numero-serie-nueva').value.trim();
+    const caja = document.getElementById('caja-nueva').value.trim();
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+
+    // Datos para nuevo producto (si aplica)
+    const nombreProducto = document.getElementById('nombre-producto-nueva').value.trim();
+    const descripcionProducto = document.getElementById('descripcion-producto-nueva').value.trim();
+    const idDron = document.getElementById('dron-nueva')?.value || null; // Asumiendo que tienes un select para drones
+
+    if (!numeroSerie || !caja || !usuario) {
+        mostrarResultado("Faltan datos obligatorios.", "error");
+        return;
+    }
+
+    // Verificar si es nuevo producto o ya existe
+    if (!codigoOriginal) {
+        mostrarResultado("Código original no encontrado.", "error");
+        return;
+    }
+
+    mostrarResultado("Registrando nueva pieza...", "loading", true);
+
+    try {
+        const response = await axios.post(`${API_URL}/registrar_pieza`, {
+            codigo_original: codigoOriginal,
+            numero_serie: numeroSerie,
+            nombre_producto: nombreProducto || null, // Enviar null si es registro de pieza existente
+            descripcion_producto: descripcionProducto || null,
+            id_dron: idDron || null,
+            caja: caja,
+            id_usuario: usuario.id_usuario
+        });
+
+        const data = response.data;
+        const fechaActual = new Date().toLocaleDateString('es-ES');
+        const contenidoEtiqueta = `
+            <div style="width: 300px; padding: 15px; font-family: Arial, sans-serif; font-size: 12px; text-align: center;">
+                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2563eb;">OTech</h2>
+                <img src="${data.ruta_etiqueta}" style="width: 100%; max-width: 250px; margin: 10px 0;" alt="Código de barras">
+                <div style="margin: 10px 0; padding: 8px; background: #f0f7ff; border-radius: 4px;">
+                    <strong style="font-size: 14px;">${data.codigo_otech}</strong>
+                </div>
+                <p style="margin: 5px 0; font-size: 11px;"><strong>Número de Serie:</strong> ${numeroSerie}</p>
+                <p style="margin: 5px 0; font-size: 11px;"><strong>Fecha:</strong> ${fechaActual}</p>
+                <p style="margin: 5px 0; font-size: 11px;"><strong>Origen:</strong> ${codigoOriginal}</p>
+            </div>
+        `;
+
+        mostrarResultado(`
+            <h3>Éxito</h3>
+            <p><strong>Código OTech:</strong> ${data.codigo_otech}</p>
+            <div class="barcode-container">
+                <img src="${data.ruta_etiqueta}" alt="Código de barras">
+            </div>
+            <p>Etiqueta generada e impresa automáticamente.</p>
+            <button onclick="window.electronAPI.imprimirContenido(\`${contenidoEtiqueta.replace(/`/g, '\\`')}\`)" 
+                    style="margin-top: 15px; padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                Reimprimir Etiqueta
+            </button>
+        `, "success");
+
+        if (window.electronAPI && window.electronAPI.imprimirContenido) {
+            setTimeout(() => {
+                window.electronAPI.imprimirContenido(contenidoEtiqueta);
+            }, 500);
+        }
+
+        // Limpiar formulario
+        resetearFormulario();
+        document.getElementById('codigoEscaneado').focus(); // Volver a enfocar escaneo
+        cargarAlertasStock(); // Recargar alertas si es necesario
+
+    } catch (error) {
+        console.error("Error al registrar pieza:", error);
+        let mensaje = "Error al registrar la pieza.";
+        if (error.response?.data?.detail) {
+            mensaje = error.response.data.detail;
+        }
+        mostrarResultado(mensaje, "error");
+    }
+}
+
+
+function resetearFormulario() {
+    // Ocultar todas las secciones dinámicas
+    document.getElementById('datos-pieza-encontrada').style.display = 'none';
+    document.getElementById('datos-nueva-pieza').style.display = 'none';
+    document.getElementById('camposProducto').style.display = 'none';
+    document.getElementById('btnActualizarEstado').style.display = 'none';
+    document.getElementById('btnRegistrarPieza').style.display = 'none';
+    document.getElementById('resultado').style.display = 'none';
+
+    // Limpiar campos de búsqueda y de resultados
+    document.getElementById('codigoEscaneado').value = '';
+    document.getElementById('nombre-producto-encontrado').value = '';
+    document.getElementById('numero-serie-encontrado').value = '';
+    document.getElementById('estado-actual-encontrado').value = '';
+    document.getElementById('caja-pieza-encontrada').value = '';
+    document.getElementById('id-pieza-oculto').value = '';
+    document.getElementById('nuevo-estado').value = 'disponible';
+    document.getElementById('observaciones-estado').value = '';
+
+    // Limpiar campos de nueva pieza
+    document.getElementById('codigo-original-nueva').value = '';
+    document.getElementById('numero-serie-nueva').value = '';
+    document.getElementById('nombre-producto-nueva').value = '';
+    document.getElementById('descripcion-producto-nueva').value = '';
+    document.getElementById('caja-nueva').value = '';
+
+
+    // Limpiar campos de nuevo producto
+    document.getElementById('nombreProducto').value = '';
+    document.getElementById('descripcionProducto').value = '';
+    document.getElementById('categoriaProducto').value = '';
+}
+
+
 
 // Función para cargar lista de usuarios (solo admin)
 async function cargarListaUsuarios() {
@@ -209,9 +430,9 @@ async function registrarNuevoProducto() {
         cargarListaUsuarios();
 
     } catch (error) {
-        let mensaje = "❌ Error al registrar el producto.";
+        let mensaje = "Error al registrar el producto.";
         if (error.response?.data?.detail) {
-            mensaje = `❌ ${error.response.data.detail}`;
+            mensaje = `${error.response.data.detail}`;
         }
         resultadoDiv.innerHTML = `<p style="color: #ef4444;">${mensaje}</p>`;
         resultadoDiv.className = 'result error';
@@ -279,9 +500,9 @@ async function registrarNuevoUsuario() {
         cargarListaUsuarios();
 
     } catch (error) {
-        let mensaje = "❌ Error al registrar usuario.";
+        let mensaje = "Error al registrar usuario.";
         if (error.response?.data?.detail) {
-            mensaje = `❌ ${error.response.data.detail}`;
+            mensaje = `${error.response.data.detail}`;
         }
         resultadoDiv.innerHTML = `<p style="color: #ef4444;">${mensaje}</p>`;
         resultadoDiv.className = 'result error';
@@ -426,6 +647,13 @@ async function registrarPieza() {
     const codigoOriginal = document.getElementById('codigoOriginal').value;
     const numeroSerie = document.getElementById('numeroSerie').value;
     const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const caja = document.getElementById('caja-almacen').value.trim();
+
+    if (!caja) {
+        mostrarResultado("Por favor, ingresa la caja de almacenamiento", "error");
+        return;
+    }
+
     if (!usuario) {
         window.location.href = 'login.html';
         return;
@@ -445,6 +673,7 @@ async function registrarPieza() {
             nombre_producto: document.getElementById('nombreProducto')?.value || null,
             descripcion_producto: document.getElementById('descripcionProducto')?.value || null,
             categoria_producto: document.getElementById('categoriaProducto')?.value || null,
+            caja: caja,
             id_usuario: usuario.id_usuario
         });
 
@@ -537,7 +766,7 @@ async function cargarInventario() {
 
         aplicarFiltros();
 
-        loadingDiv.style.display = 'none';
+        loadingDiv.style.display = 'none'; 
         contenidoDiv.style.display = 'block';
 
     } catch (error) {
@@ -594,12 +823,15 @@ function aplicarFiltros() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${pieza.id_pieza}</td>
+                <td>${pieza.nombre_producto}</td>
+                <td>${pieza.nombre_dron}</td>
                 <td><strong>${pieza.codigo_barras}</strong></td>
                 <td>${pieza.numero_serie}</td>
-                <td>${pieza.nombre_producto}</td>
                 <td><span class="${estadoClass}">${pieza.estado}</span></td>
                 <td>${fecha}</td>
                 <td>${pieza.nombre_usuario || 'N/A'}</td>
+                <td>${pieza.caja}</td>
+
             `;
             tbody.appendChild(row);
         });
@@ -806,6 +1038,7 @@ document.getElementById('numeroSerie')?.addEventListener('keypress', function(e)
         registrarPieza();
     }
 });
+
 
 
 

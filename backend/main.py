@@ -8,6 +8,9 @@ from database import get_db_connection
 from passlib.context import CryptContext
 import re 
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="OTech Inventory API")
 
@@ -53,19 +56,146 @@ async def login(username: str = Form(...), password: str = Form(...)):
     }
 
 
+# --- Buscar Código ---
+
+from schemas import BuscarCodigoRequest
+
+@app.post("/buscar_codigo")
+async def buscar_codigo_endpoint(data: BuscarCodigoRequest):
+    codigo = data.codigo
+    conn = get_db_connection()
+    if conn is None:
+        raise HTTPException(status_code=500, detail="Error: No se pudo conectar a la base de datos")
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Buscar por codigo_barras (OTech-...)
+        cursor.execute("""
+            SELECT p.id_pieza, p.numero_serie, p.estado, p.caja, pr.nombre AS nombre_producto
+            FROM pieza p
+            JOIN producto pr ON p.id_producto = pr.id_producto
+            WHERE p.codigo_barras = %s
+        """, (codigo,))
+        pieza_por_codigo_barras = cursor.fetchone()
+
+        if pieza_por_codigo_barras:
+            logger.info(f"Encontrado por codigo_barras: {codigo}")
+            cursor.close()
+            conn.close()
+            return {
+                "tipo": "pieza",
+                "pieza": pieza_por_codigo_barras
+            }
+
+        # 2. Buscar por numero_serie
+        cursor.execute("""
+            SELECT p.id_pieza, p.numero_serie, p.estado, p.caja, pr.nombre AS nombre_producto
+            FROM pieza p
+            JOIN producto pr ON p.id_producto = pr.id_producto
+            WHERE p.numero_serie = %s
+        """, (codigo,))
+        pieza_por_serie = cursor.fetchone()
+
+        if pieza_por_serie:
+            logger.info(f"Encontrado por numero_serie: {codigo}")
+            cursor.close()
+            conn.close()
+            return {
+                "tipo": "pieza",
+                "pieza": pieza_por_serie
+            }
+
+        # 3. Buscar por codigo_original (producto)
+        cursor.execute("""
+            SELECT id_producto, codigo_original, nombre, descripcion, id_dron
+            FROM producto
+            WHERE codigo_original = %s
+        """, (codigo,))
+        producto = cursor.fetchone()
+
+        if producto:
+            logger.info(f"Encontrado por codigo_original (producto): {codigo}")
+            cursor.close()
+            conn.close()
+            return {
+                "tipo": "producto",
+                "producto": producto
+            }
+
+        # 4. No encontrado
+        logger.info(f"Código no encontrado en ninguna tabla: {codigo}")
+        cursor.close()
+        conn.close()
+        return {
+            "tipo": "nuevo_producto",
+            "codigo_original": codigo
+        }
+
+    except Exception as e:
+        logger.error(f"Error en /buscar_codigo: {e}")
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+
+# --- Actualizar Estado ---
+@app.post("/actualizar_estado_pieza")
+async def actualizar_estado_pieza_endpoint(id_pieza: int, nuevo_estado: str, id_usuario: int, observaciones: str = ""):
+    # Validar estado
+    estados_validos = ["disponible", "en_venta", "en_garantia", "en_reparacion"]
+    if nuevo_estado not in estados_validos:
+        raise HTTPException(status_code=400, detail="Estado no válido")
+
+    conn = get_db_connection()
+    if conn is None:
+        raise HTTPException(status_code=500, detail="Error: No se pudo conectar a la base de datos")
+
+    try:
+        # Obtener estado actual para el movimiento
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT estado FROM pieza WHERE id_pieza = %s", (id_pieza,))
+        resultado = cursor.fetchone()
+        if not resultado:
+            raise HTTPException(status_code=404, detail="Pieza no encontrada")
+
+        estado_anterior = resultado['estado']
+
+        # Actualizar estado
+        cursor.execute("UPDATE pieza SET estado = %s WHERE id_pieza = %s", (nuevo_estado, id_pieza))
+        conn.commit()
+
+        # Registrar movimiento
+        registrar_movimiento(id_pieza, "cambio_estado", id_usuario, f"Cambio de '{estado_anterior}' a '{nuevo_estado}'. {observaciones}".strip())
+
+        cursor.close()
+        conn.close()
+
+        return {"mensaje": f"Estado de la pieza {id_pieza} actualizado a {nuevo_estado}"}
+
+    except Exception as e:
+        logger.error(f"Error en /actualizar_estado_pieza: {e}")
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn.is_connected():
+            conn.close()
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+
+
+
 @app.post("/registrar_pieza")
 async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
     # 1. Verificar si producto existe
     producto = producto_existe(data.codigo_original)
     if not producto:
-        # Crear producto
+        # Crear producto (esto solo ocurre si es un codigo de proveedor completamente nuevo)
         if not data.nombre_producto:
             raise HTTPException(status_code=400, detail="Nombre del producto requerido para nuevo producto")
         id_producto = crear_producto(
             data.codigo_original,
             data.nombre_producto,
             data.descripcion_producto,
-            data.categoria_producto
+            data.id_dron
         )
     else:
         id_producto = producto["id_producto"]
@@ -75,7 +205,7 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
         raise HTTPException(status_code=400, detail="Número de serie ya registrado")
 
     # 3. Crear pieza
-    resultado = crear_pieza(id_producto, data.numero_serie, data.id_usuario)
+    resultado = crear_pieza(id_producto, data.numero_serie, data.id_usuario, data.caja)
 
     # 4. Generar código de barras
     codigo = resultado["codigo_otech"]
@@ -84,7 +214,7 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
     ean.save(filename)  # Guarda como PNG
 
     # 5. Registrar movimiento de entrada
-    registrar_movimiento(resultado["id_pieza"], "entrada", data.id_usuario, "Pieza registrada e ingresada al sistema")
+    registrar_movimiento(resultado["id_pieza"], "registro_inicial", data.id_usuario, "Pieza registrada e ingresada al sistema")
 
     return {
         "mensaje": "Pieza registrada exitosamente",
@@ -117,13 +247,17 @@ async def obtener_inventario():
                 p.codigo_barras,
                 p.numero_serie,
                 p.estado,
+                p.caja,
                 p.fecha_registro,
                 pr.nombre AS nombre_producto,
+                d.nombre AS nombre_dron,
                 COALESCE(u.nombre_usuario, 'Usuario eliminado') AS nombre_usuario
             FROM pieza p
             LEFT JOIN producto pr ON p.id_producto = pr.id_producto
+            LEFT JOIN dron d ON pr.id_dron = d.id
             LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
             ORDER BY p.fecha_registro DESC
+            LIMIT 0, 25;
         """)
         
         print("Consulta ejecutada. Obteniendo resultados...")
@@ -192,7 +326,7 @@ async def obtener_alertas_stock_bajo():
             p.stock_minimo,
             COUNT(pi.id_pieza) as stock_actual
         FROM producto p
-        LEFT JOIN pieza pi ON p.id_producto = pi.id_producto AND pi.estado = 'Nuevo'
+        LEFT JOIN pieza pi ON p.id_producto = pi.id_producto AND pi.estado = 'disponible'
         WHERE p.stock_minimo > 0
         GROUP BY p.id_producto, p.nombre, p.stock_minimo
         HAVING stock_actual < p.stock_minimo
@@ -223,16 +357,20 @@ async def exportar_inventario():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
             SELECT 
-                p.id_pieza, 
+                p.id_pieza,
+                pr.nombre AS nombre_producto,
+                d.nombre AS nombre_dron,       
                 p.codigo_barras, 
                 p.numero_serie, 
                 p.estado, 
                 p.fecha_registro,
-                pr.nombre AS nombre_producto,
-                u.nombre_usuario AS usuario_nombre
+                u.nombre_usuario AS usuario_nombre,
+                p.caja
             FROM pieza p
             LEFT JOIN producto pr ON p.id_producto = pr.id_producto
+            LEFT JOIN dron d ON pr.id_dron = d.id 
             LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
+            WHERE p.estado = 'disponible'
             ORDER BY p.fecha_registro DESC;
         """)
         piezas = cursor.fetchall()
@@ -240,7 +378,7 @@ async def exportar_inventario():
         conn.close()
 
         # Definir columnas explícitamente
-        columnas = ['id_pieza', 'codigo_barras', 'numero_serie', 'estado', 'fecha_registro', 'nombre_producto', 'usuario_nombre']
+        columnas = ['id_pieza', 'nombre_producto', 'nombre_dron', 'codigo_barras', 'numero_serie', 'estado', 'fecha_registro', 'usuario_nombre', 'caja']
         if not piezas:
             df = pd.DataFrame(columns=columnas)
         else:
@@ -259,12 +397,14 @@ async def exportar_inventario():
         # Renombrar columnas
         df.rename(columns={
             'id_pieza': 'ID Pieza',
-            'codigo_barras': 'Código de Barras',
-            'numero_serie': 'N° Serie',
-            'estado': 'Estado',
-            'fecha_registro': 'Fecha Registro',
             'nombre_producto': 'Producto',
-            'usuario_nombre': 'Registrado por'
+            'nombre_dron': 'Dron',
+            'codigo_barras': 'Código de Barras',
+            'numero_serie': 'Número de Serie',
+            'estado': 'Estado',
+            'fecha_registro': 'Fecha de Registro',
+            'usuario_nombre': 'Registrado por',
+            'caja': 'Caja'
         }, inplace=True)
 
         # Crear Excel con formato profesional
@@ -355,7 +495,6 @@ async def listar_usuarios():
 
 
 
-
 # --- Endpoint para crear nuevo usuario (solo admin) ---
 @app.post("/admin/crear_usuario")
 async def crear_usuario_admin(
@@ -408,7 +547,7 @@ async def crear_producto_admin(
     codigo_original: str,
     nombre: str,
     descripcion: str,
-    categoria: str,
+    id_dron: int,
     stock_minimo: int
 ):
     conn = get_db_connection()
@@ -425,9 +564,9 @@ async def crear_producto_admin(
 
     # Insertar nuevo producto
     cursor.execute("""
-        INSERT INTO producto (codigo_original,nombre, descripcion, categoria, stock_minimo)
+        INSERT INTO producto (codigo_original,nombre, descripcion, id_dron, stock_minimo)
         VALUES (%s, %s, %s, %s, %s)
-    """, (codigo_original, nombre, descripcion, categoria, stock_minimo))
+    """, (codigo_original, nombre, descripcion, id_dron, stock_minimo))
 
     conn.commit()
     cursor.close()
@@ -559,3 +698,17 @@ async def obtener_usuario(id_usuario: int):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
     return usuario
+
+
+
+
+
+@app.get("/admin/listar_drones")
+async def listar_drones():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, nombre FROM dron ORDER BY nombre")
+    drones = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return drones

@@ -6,5 +6,11 @@ class RegistroPiezaRequest(BaseModel):
     numero_serie: str
     nombre_producto: str = None
     descripcion_producto: str = None
-    categoria_producto: str = None
+    id_dron: int = None
+    caja: str
     id_usuario: int = 1  # temporal, luego se autentica
+
+
+
+class BuscarCodigoRequest(BaseModel):
+    codigo: str

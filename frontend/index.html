@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;font-src 'self' https://fonts.gstatic.com;img-src 'self' data:;connect-src 'self' http://localhost:8000;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' https://cdn.jsdelivr.net   'unsafe-inline';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;font-src 'self' https://fonts.gstatic.com;img-src 'self' data:;connect-src 'self' http://localhost:8000;">
     <title>OTech Inventario</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -374,21 +374,84 @@
         <div class="container">
             <h1>Registro de Piezas</h1>
 
+            <!-- Campo único de escaneo -->
             <div class="form-group">
-                <label for="codigoOriginal">Código original (QR / Barras)</label>
-                <input type="text" id="codigoOriginal" placeholder="Escanee o ingrese el código del fabricante" autofocus>
+                <label for="codigoEscaneado">Escanea Código (Barras, QR, OTech)</label>
+                <input type="text" id="codigoEscaneado" placeholder="Escanee o ingrese cualquier código" autofocus>
             </div>
+            <button id="btnBuscar" onclick="buscarCodigo()">Buscar</button>
 
-            <div class="form-group">
-                <label for="numeroSerie">Número de serie</label>
-                <input type="text" id="numeroSerie" placeholder="Escanee o ingrese el número de serie único" autofocus>
-            </div>
+            <!-- Resultado de búsqueda -->
+            <div id="resultado"></div>
 
-            <div id="camposProducto">
-                <h3>Producto Nuevo — Complete los datos</h3>
+            <!-- Sección: Datos de Pieza Encontrada (Actualizar Estado) -->
+            <div id="datos-pieza-encontrada" style="display: none; margin-top: 24px; padding: 24px; background-color: #f0f7ff; border: 2px solid #1d4ed8; border-radius: 12px;">
+                <h3 style="color: #1d4ed8;">Pieza Encontrada - Actualizar Estado</h3>
                 <div class="form-group">
-                    <label for="nombreProducto">Nombre del producto</label>
-                    <input type="text" id="nombreProducto" placeholder="Ej: Sensor de Presión XYZ-200">
+                    <label>Nombre del Producto:</label>
+                    <input type="text" id="nombre-producto-encontrado" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Número de Serie:</label>
+                    <input type="text" id="numero-serie-encontrado" readonly>
+                </div>
+                 <div class="form-group">
+                    <label>Caja:</label>
+                    <input type="text" id="caja-pieza-encontrada" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Estado Actual:</label>
+                    <input type="text" id="estado-actual-encontrado" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Nuevo Estado:</label>
+                    <select id="nuevo-estado">
+                        <option value="disponible">Disponible</option>
+                        <option value="en_venta">En Venta</option>
+                        <option value="en_garantia">En Garantía</option>
+                        <option value="en_reparacion">En Reparación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones (opcional):</label>
+                    <input type="text" id="observaciones-estado" placeholder="Motivo del cambio...">
+                </div>
+                <input type="hidden" id="id-pieza-oculto">
+                <button id="btnActualizarEstado" onclick="actualizarEstadoPieza()" style="background-color: #f59e0b; color: white;">Actualizar Estado</button>
+            </div>
+
+            <!-- Sección: Datos para Nueva Pieza (Registro) -->
+            <div id="datos-nueva-pieza" style="display: none; margin-top: 24px; padding: 24px; background-color: #f0fff4; border: 2px solid #10b981; border-radius: 12px;">
+                <h3 style="color: #10b981;">Registrar Nueva Pieza</h3>
+                <div class="form-group">
+                    <label for="codigo-original-nueva">Código Original (Proveedor/Fabricante)</label>
+                    <input type="text" id="codigo-original-nueva" readonly> <!-- Solo lectura si se encontró producto -->
+                </div>
+                <div class="form-group">
+                    <label for="nombre-producto-nueva">Nombre del Producto</label>
+                    <input type="text" id="nombre-producto-nueva" readonly> <!-- Solo lectura si se encontró producto -->
+                </div>
+                <div class="form-group">
+                    <label for="descripcion-producto-nueva">Descripción del Producto</label>
+                    <input type="text" id="descripcion-producto-nueva" readonly> <!-- Solo lectura si se encontró producto -->
+                </div>
+                <div class="form-group">
+                    <label for="numero-serie-nueva">Número de Serie *</label>
+                    <input type="text" id="numero-serie-nueva" placeholder="Ingrese el número de serie único" required>
+                </div>
+                <div class="form-group">
+                    <label for="caja-nueva">Caja de Almacenamiento *</label>
+                    <input type="text" id="caja-nueva" placeholder="Ej: Caja A1, Estantería B3" required>
+                </div>
+                <button id="btnRegistrarPieza" onclick="registrarPiezaNueva()" style="background-color: #10b981; color: white;">Registrar Pieza</button>
+            </div>
+
+            <!-- Sección: Datos para Nuevo Producto (Registro) - Igual que antes -->
+            <div id="camposProducto" style="display: none; margin-top: 24px; padding: 24px; background-color: #fef2f2; border: 2px solid #ef4444; border-radius: 12px;">
+                <h3 style="color: #ef4444;">Producto Nuevo — Complete los datos</h3>
+                <div class="form-group">
+                    <label for="nombreProducto">Nombre del producto *</label>
+                    <input type="text" id="nombreProducto" placeholder="Ej: Sensor de Presión XYZ-200" required>
                 </div>
                 <div class="form-group">
                     <label for="descripcionProducto">Descripción</label>
@@ -398,13 +461,10 @@
                     <label for="categoriaProducto">Categoría</label>
                     <input type="text" id="categoriaProducto" placeholder="Ej: Sensores, Electrónica, Herramientas">
                 </div>
+                <button id="btnRegistrarPieza" onclick="registrarPiezaNueva()" style="background-color: #ef4444; color: white;">Registrar Producto y Pieza</button>
             </div>
 
-            <button id="btnRegistrar" onclick="registrarPieza()" style="color: white;">Registrar pieza</button>
-
-            <div id="resultado"></div>
         </div>
-
 
         <div id="alertas-stock" >
             <!--<h3 style="color: #d97706; margin: 0 0 10px 0;">Alertas de Stock Bajo</h3>-->
@@ -431,10 +491,10 @@
                         <label for="filtro-estado" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Estado</label>
                         <select id="filtro-estado" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
                             <option value="">Todos los estados</option>
-                            <option value="Nuevo">Nuevo</option>
-                            <option value="Venta">Venta</option>
-                            <option value="Garantia">Garantía</option>
-                            <option value="Reparacion">Reparación</option>
+                            <option value="disponible">Disponible</option>
+                            <option value="en_venta">En Venta</option>
+                            <option value="en_garantia">En Garantía</option>
+                            <option value="en_reparacion">En Reparación</option>
                         </select>
                     </div>
 
@@ -465,12 +525,14 @@
                         <thead>
                             <tr>
                                 <th>ID Pieza</th>
-                                <th>Código OTech</th>
-                                <th>Número de Serie</th>
                                 <th>Producto</th>
+                                <th>Dron</th>
+                                <th>Código de Barras</th>
+                                <th>Número de Serie</th>
                                 <th>Estado</th>
-                                <th>Registrado</th>
-                                <th>Por</th>
+                                <th>Fecha de Registro</th>
+                                <th>Registrado por</th>
+                                <th>Caja</th>
                             </tr>
                         </thead>
                         <tbody id="inventario-body">
