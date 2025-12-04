@@ -11,6 +11,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+from schemas import RegistroPiezaRequest, BuscarCodigoRequest, ActualizarEstadoRequest
 
 app = FastAPI(title="OTech Inventory API")
 
@@ -139,11 +140,13 @@ async def buscar_codigo_endpoint(data: BuscarCodigoRequest):
 
 
 # --- Actualizar Estado ---
+from schemas import ActualizarEstadoRequest  
+
 @app.post("/actualizar_estado_pieza")
-async def actualizar_estado_pieza_endpoint(id_pieza: int, nuevo_estado: str, id_usuario: int, observaciones: str = ""):
+async def actualizar_estado_pieza_endpoint(data: ActualizarEstadoRequest):
     # Validar estado
     estados_validos = ["disponible", "en_venta", "en_garantia", "en_reparacion"]
-    if nuevo_estado not in estados_validos:
+    if data.nuevo_estado not in estados_validos:
         raise HTTPException(status_code=400, detail="Estado no válido")
 
     conn = get_db_connection()
@@ -151,34 +154,37 @@ async def actualizar_estado_pieza_endpoint(id_pieza: int, nuevo_estado: str, id_
         raise HTTPException(status_code=500, detail="Error: No se pudo conectar a la base de datos")
 
     try:
-        # Obtener estado actual para el movimiento
+        # Obtener estado actual
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT estado FROM pieza WHERE id_pieza = %s", (id_pieza,))
+        cursor.execute("SELECT estado FROM pieza WHERE id_pieza = %s", (data.id_pieza,))
         resultado = cursor.fetchone()
         if not resultado:
             raise HTTPException(status_code=404, detail="Pieza no encontrada")
-
         estado_anterior = resultado['estado']
 
         # Actualizar estado
-        cursor.execute("UPDATE pieza SET estado = %s WHERE id_pieza = %s", (nuevo_estado, id_pieza))
+        cursor.execute("UPDATE pieza SET estado = %s WHERE id_pieza = %s", (data.nuevo_estado, data.id_pieza))
         conn.commit()
 
         # Registrar movimiento
-        registrar_movimiento(id_pieza, "cambio_estado", id_usuario, f"Cambio de '{estado_anterior}' a '{nuevo_estado}'. {observaciones}".strip())
+        registrar_movimiento(
+            data.id_pieza,
+            "cambio_estado",
+            data.id_usuario,
+            f"Cambio de '{estado_anterior}' a '{data.nuevo_estado}'. {data.observaciones}".strip()
+        )
 
         cursor.close()
         conn.close()
-
-        return {"mensaje": f"Estado de la pieza {id_pieza} actualizado a {nuevo_estado}"}
+        return {"mensaje": f"Estado de la pieza {data.id_pieza} actualizado a {data.nuevo_estado}"}
 
     except Exception as e:
-        logger.error(f"Error en /actualizar_estado_pieza: {e}")
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals() and conn.is_connected():
             conn.close()
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
 
 
 

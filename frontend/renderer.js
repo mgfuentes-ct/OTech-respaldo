@@ -205,31 +205,34 @@ async function registrarPiezaNueva() {
     const caja = document.getElementById('caja-nueva').value.trim();
     const usuario = JSON.parse(localStorage.getItem('usuario'));
 
-    // Datos para nuevo producto (si aplica)
-    const nombreProducto = document.getElementById('nombre-producto-nueva').value.trim();
-    const descripcionProducto = document.getElementById('descripcion-producto-nueva').value.trim();
-    const idDron = document.getElementById('dron-nueva')?.value || null; // Asumiendo que tienes un select para drones
+    const nombreProducto = document.getElementById('nombre-producto-nueva')?.value.trim() || null;
+    const descripcionProducto = document.getElementById('descripcion-producto-nueva')?.value.trim() || null;
+
+    // Manejo de id_dron: si existe en el DOM, conviértelo a número; si no, null
+    let idDron = null;
+    const dronField = document.getElementById('dron-nueva');
+    if (dronField && dronField.value) {
+        idDron = parseInt(dronField.value, 10);
+    }
 
     if (!numeroSerie || !caja || !usuario) {
         mostrarResultado("Faltan datos obligatorios.", "error");
         return;
     }
-
-    // Verificar si es nuevo producto o ya existe
     if (!codigoOriginal) {
         mostrarResultado("Código original no encontrado.", "error");
         return;
     }
 
     mostrarResultado("Registrando nueva pieza...", "loading", true);
-
     try {
+        // Aquí se envía EXACTAMENTE lo que espera RegistroPiezaRequest
         const response = await axios.post(`${API_URL}/registrar_pieza`, {
             codigo_original: codigoOriginal,
             numero_serie: numeroSerie,
-            nombre_producto: nombreProducto || null, // Enviar null si es registro de pieza existente
-            descripcion_producto: descripcionProducto || null,
-            id_dron: idDron || null,
+            nombre_producto: nombreProducto,
+            descripcion_producto: descripcionProducto,
+            id_dron: idDron, // null o número
             caja: caja,
             id_usuario: usuario.id_usuario
         });
@@ -256,7 +259,7 @@ async function registrarPiezaNueva() {
                 <img src="${data.ruta_etiqueta}" alt="Código de barras">
             </div>
             <p>Etiqueta generada e impresa automáticamente.</p>
-            <button onclick="window.electronAPI.imprimirContenido(\`${contenidoEtiqueta.replace(/`/g, '\\`')}\`)" 
+            <button onclick="window.electronAPI.imprimirContenido(\`${contenidoEtiqueta.replace(/`/g, '\\\\`')}\`)" 
                     style="margin-top: 15px; padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
                 Reimprimir Etiqueta
             </button>
@@ -268,10 +271,9 @@ async function registrarPiezaNueva() {
             }, 500);
         }
 
-        // Limpiar formulario
         resetearFormulario();
-        document.getElementById('codigoEscaneado').focus(); // Volver a enfocar escaneo
-        cargarAlertasStock(); // Recargar alertas si es necesario
+        document.getElementById('codigoEscaneado').focus();
+        cargarAlertasStock();
 
     } catch (error) {
         console.error("Error al registrar pieza:", error);
@@ -282,6 +284,7 @@ async function registrarPiezaNueva() {
         mostrarResultado(mensaje, "error");
     }
 }
+
 
 
 function resetearFormulario() {
