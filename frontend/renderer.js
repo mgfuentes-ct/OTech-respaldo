@@ -239,16 +239,13 @@ async function registrarPiezaNueva() {
 
         const data = response.data;
         const fechaActual = new Date().toLocaleDateString('es-ES');
+        const imgSrc = `${API_URL}${data.ruta_etiqueta}`;
         const contenidoEtiqueta = `
-            <div style="width: 300px; padding: 15px; font-family: Arial, sans-serif; font-size: 12px; text-align: center;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2563eb;">OTech</h2>
-                <img src="${data.ruta_etiqueta}" style="width: 100%; max-width: 250px; margin: 10px 0;" alt="Código de barras">
-                <div style="margin: 10px 0; padding: 8px; background: #f0f7ff; border-radius: 4px;">
-                    <strong style="font-size: 14px;">${data.codigo_otech}</strong>
+            <div style="width: 180px; padding: 4px; font-family: Arial, sans-serif; font-size: 11px; text-align: center; line-height: 1.2;">
+                <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px; letter-spacing: 0.5px;">
+                    ${data.codigo_otech}
                 </div>
-                <p style="margin: 5px 0; font-size: 11px;"><strong>Número de Serie:</strong> ${numeroSerie}</p>
-                <p style="margin: 5px 0; font-size: 11px;"><strong>Fecha:</strong> ${fechaActual}</p>
-                <p style="margin: 5px 0; font-size: 11px;"><strong>Origen:</strong> ${codigoOriginal}</p>
+                <img src="${imgSrc}" style="width: 100%; height: auto; max-height: 18px; image-rendering: pixelated;" alt="Código de barras">
             </div>
         `;
 
@@ -646,53 +643,92 @@ async function eliminarUsuario(idUsuario, nombreCompleto) {
 
 
 // Función para registrar pieza
-async function registrarPieza() {
-    const codigoOriginal = document.getElementById('codigoOriginal').value;
-    const numeroSerie = document.getElementById('numeroSerie').value;
+async function registrarPiezaNueva() {
+    const codigoOriginal = document.getElementById('codigo-original-nueva').value.trim();
+    const numeroSerie = document.getElementById('numero-serie-nueva').value.trim();
+    const caja = document.getElementById('caja-nueva').value.trim();
     const usuario = JSON.parse(localStorage.getItem('usuario'));
-    const caja = document.getElementById('caja-almacen').value.trim();
+    const nombreProducto = document.getElementById('nombre-producto-nueva')?.value.trim() || null;
+    const descripcionProducto = document.getElementById('descripcion-producto-nueva')?.value.trim() || null;
 
-    if (!caja) {
-        mostrarResultado("Por favor, ingresa la caja de almacenamiento", "error");
+    let idDron = null;
+    const dronField = document.getElementById('dron-nueva');
+    if (dronField && dronField.value) {
+        idDron = parseInt(dronField.value, 10);
+    }
+
+    if (!numeroSerie || !caja || !usuario) {
+        mostrarResultado("Faltan datos obligatorios.", "error");
+        return;
+    }
+    if (!codigoOriginal) {
+        mostrarResultado("Código original no encontrado.", "error");
         return;
     }
 
-    if (!usuario) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    if (!codigoOriginal || !numeroSerie) {
-        mostrarResultado("Por favor, ingresa ambos códigos", "error");
-        return;
-    }
-
-    mostrarResultado("Registrando... por favor espera.", "loading", true);
+    mostrarResultado("Registrando nueva pieza...", "loading", true);
 
     try {
         const response = await axios.post(`${API_URL}/registrar_pieza`, {
             codigo_original: codigoOriginal,
             numero_serie: numeroSerie,
-            nombre_producto: document.getElementById('nombreProducto')?.value || null,
-            descripcion_producto: document.getElementById('descripcionProducto')?.value || null,
-            categoria_producto: document.getElementById('categoriaProducto')?.value || null,
+            nombre_producto: nombreProducto,
+            descripcion_producto: descripcionProducto,
+            id_dron: idDron,
             caja: caja,
             id_usuario: usuario.id_usuario
         });
 
         const data = response.data;
-
         const fechaActual = new Date().toLocaleDateString('es-ES');
+
+        // ✅ Convertir imagen a base64 (clave para que se imprima)
+        let imgBase64 = "";
+        try {
+            const imgSrc = data.ruta_etiqueta;
+            const responseImg = await fetch(imgSrc);
+            const blob = await responseImg.blob();
+            imgBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (err) {
+            console.error("Error al cargar imagen como base64:", err);
+            // Fallback: imagen vacía (solo texto)
+            imgBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwADegcLQK+OJjIAAAAASUVORK5CYII=";
+        }
+
+        // ✅ HTML de etiqueta — ajustado a 50mm x 25mm
         const contenidoEtiqueta = `
-            <div style="width: 300px; padding: 15px; font-family: Arial, sans-serif; font-size: 12px; text-align: center;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2563eb;">OTech</h2>
-                <img src="${data.ruta_etiqueta}" style="width: 100%; max-width: 250px; margin: 10px 0;" alt="Código de barras">
-                <div style="margin: 10px 0; padding: 8px; background: #f0f7ff; border-radius: 4px;">
-                    <strong style="font-size: 14px;">${data.codigo_otech}</strong>
-                </div>
-                <p style="margin: 5px 0; font-size: 11px;"><strong>Número de Serie:</strong> ${numeroSerie}</p>
-                <p style="margin: 5px 0; font-size: 11px;"><strong>Fecha:</strong> ${fechaActual}</p>
-                <p style="margin: 5px 0; font-size: 11px;"><strong>Origen:</strong> ${codigoOriginal}</p>
+            <div style="
+                width: 50mm;
+                height: 25mm;
+                padding: 0;
+                margin: 0;
+                font-family: 'Courier New', monospace;
+                font-size: 9pt;
+                text-align: center;
+                line-height: 1.1;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                position: relative;">
+                
+                <img 
+                    src="${imgBase64}" 
+                    style="
+                        width: 100mm;
+                        height: auto;
+                        image-rendering: pixelated;
+                        object-fit: contain;
+                    " 
+                    alt="Código de barras"
+                />
+                <div style="font-size: 7pt; opacity: 0.7;">${fechaActual}</div>
             </div>
         `;
 
@@ -700,41 +736,35 @@ async function registrarPieza() {
             <h3>Éxito</h3>
             <p><strong>Código OTech:</strong> ${data.codigo_otech}</p>
             <div class="barcode-container">
-                <img src="${data.ruta_etiqueta}" alt="Código de barras">
+                <img src="${imgBase64}" alt="Código de barras" style="max-width: 200px; height: auto;">
             </div>
             <p>Etiqueta generada e impresa automáticamente.</p>
-            <button onclick="window.electronAPI.imprimirContenido(\`${contenidoEtiqueta.replace(/`/g, '\\`')}\`)" 
+            <button onclick="window.electronAPI.imprimirContenido(\`${contenidoEtiqueta.replace(/`/g, '\\`')}\`)"
                     style="margin-top: 15px; padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
                 Reimprimir Etiqueta
             </button>
         `, "success");
 
-        if (window.electronAPI && window.electronAPI.imprimirContenido) {
+        // ✅ Imprimir automáticamente
+        if (window.electronAPI?.imprimirContenido) {
             setTimeout(() => {
                 window.electronAPI.imprimirContenido(contenidoEtiqueta);
             }, 500);
         }
 
-        document.getElementById('codigoOriginal').value = '';
-        document.getElementById('numeroSerie').value = '';
-        document.getElementById('camposProducto').style.display = 'none';
-
+        resetearFormulario();
+        document.getElementById('codigoEscaneado').focus();
         cargarAlertasStock();
 
     } catch (error) {
-        let mensaje = "Ocurrió un error inesperado.";
-        let tipo = "error";
-
-        if (error.response?.data?.detail === "Nombre del producto requerido para nuevo producto") {
-            document.getElementById('camposProducto').style.display = 'block';
-            mensaje = "Este producto no existe. Completa los datos abajo y vuelve a intentar.";
-        } else if (error.response?.data?.detail === "Número de serie ya registrado") {
+        console.error("Error al registrar pieza:", error);
+        let mensaje = "Error al registrar la pieza.";
+        if (error.response?.data?.detail === "Número de serie ya registrado") {
             mensaje = "¡Error! Este número de serie ya está registrado.";
-        } else {
-            mensaje = `Error: ${error.message}`;
+        } else if (error.response?.data?.detail) {
+            mensaje = error.response.data.detail;
         }
-
-        mostrarResultado(mensaje, tipo);
+        mostrarResultado(mensaje, "error");
     }
 }
 

@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<button onclick="imprimir()">🖨️ Imprimir Prueba</button>
+<script>
+function imprimir() {
+  const contenido = '<div style="font-size:18px; text-align:center;">PRUEBA OTech</div>';
+  window.electronAPI.imprimirContenido(contenido);
+}
+</script>
+</html>

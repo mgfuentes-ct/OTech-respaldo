@@ -19,10 +19,13 @@
   "homepage": "https://github.com/mgfuentes-ct/OTech-respaldo#readme",
   "description": "",
   "devDependencies": {
-    "electron": "^38.1.0"
+    "electron": "^38.7.2",
+    "electron-rebuild": "^3.2.9"
   },
   "dependencies": {
     "axios": "^1.12.1",
-    "electron-printer": "^0.0.5"
+    "escpos": "^3.0.0-alpha.6",
+    "escpos-usb": "^3.0.0-alpha.4",
+    "node-printer": "^1.0.4"
   }
 }

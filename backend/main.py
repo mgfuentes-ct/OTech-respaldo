@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI, HTTPException, Form, Request
 from models import producto_existe, crear_producto, pieza_existe_por_serie, crear_pieza, registrar_movimiento
 from schemas import RegistroPiezaRequest
 import barcode
@@ -13,7 +13,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 from schemas import RegistroPiezaRequest, BuscarCodigoRequest, ActualizarEstadoRequest
 
+
 app = FastAPI(title="OTech Inventory API")
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/codigos", StaticFiles(directory="codigos"), name="codigos")
 
 # Crear carpeta para códigos si no existe
 if not os.path.exists("codigos"):
@@ -190,7 +194,7 @@ async def actualizar_estado_pieza_endpoint(data: ActualizarEstadoRequest):
 
 
 @app.post("/registrar_pieza")
-async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
+async def registrar_pieza_endpoint(data: RegistroPiezaRequest, request: Request):
     # 1. Verificar si producto existe
     producto = producto_existe(data.codigo_original)
     if not producto:
@@ -222,10 +226,13 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest):
     # 5. Registrar movimiento de entrada
     registrar_movimiento(resultado["id_pieza"], "registro_inicial", data.id_usuario, "Pieza registrada e ingresada al sistema")
 
+    base_url = str(request.base_url).rstrip("/")  
+    ruta_absoluta = f"{base_url}/codigos/{codigo}.png"
+
     return {
         "mensaje": "Pieza registrada exitosamente",
         "codigo_otech": codigo,
-        "ruta_etiqueta": f"{filename}.png",
+        "ruta_etiqueta": ruta_absoluta, # cambiamos la ruta (checar por si hay problemas futuros)
         "id_pieza": resultado["id_pieza"]
     }
 
@@ -262,8 +269,7 @@ async def obtener_inventario():
             LEFT JOIN producto pr ON p.id_producto = pr.id_producto
             LEFT JOIN dron d ON pr.id_dron = d.id
             LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
-            ORDER BY p.fecha_registro DESC
-            LIMIT 0, 25;
+            ORDER BY p.fecha_registro DESC;
         """)
         
         print("Consulta ejecutada. Obteniendo resultados...")

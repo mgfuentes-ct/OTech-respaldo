@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba de Impresión</title>
+</head>
+<body>
+  <h2>Prueba de Impresora Térmica</h2>
+  <button id="btn">Imprimir Prueba</button>
+
+  <script>
+    document.getElementById('btn').onclick = () => {
+      const contenido = '<div style="width:180px;text-align:center;font-family:Arial;font-size:19px;"><strong>OTech-PRUEBA</strong><br>¡Funciona!</div>';
+      
+      // ✅ SOLO esta línea debe existir para imprimir
+      if (window.electronAPI?.imprimirContenido) {
+        window.electronAPI.imprimirContenido(contenido);
+        alert("¡Comando enviado!");
+      } else {
+        alert("API no disponible. Abre desde Electron.");
+      }
+    };
+  </script>
+</body>
+</html>
