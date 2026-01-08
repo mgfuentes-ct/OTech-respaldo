@@ -642,7 +642,7 @@ async function eliminarUsuario(idUsuario, nombreCompleto) {
 }
 
 
-// Función para registrar pieza
+// Función para registrar pieza ESTE ES EL BUENO 
 async function registrarPiezaNueva() {
     const codigoOriginal = document.getElementById('codigo-original-nueva').value.trim();
     const numeroSerie = document.getElementById('numero-serie-nueva').value.trim();
@@ -705,30 +705,21 @@ async function registrarPiezaNueva() {
             <div style="
                 width: 50mm;
                 height: 25mm;
-                padding: 0;
                 margin: 0;
-                font-family: 'Courier New', monospace;
-                font-size: 9pt;
-                text-align: center;
-                line-height: 1.1;
+                padding: 0;
                 box-sizing: border-box;
                 display: flex;
-                flex-direction: column;
                 justify-content: center;
-                align-items: center;
-                position: relative;">
-                
+                align-items: center;">
                 <img 
                     src="${imgBase64}" 
                     style="
-                        width: 100mm;
-                        height: auto;
-                        image-rendering: pixelated;
-                        object-fit: contain;
+                        width: 46mm;
+                        height: 12mm;
+                        object-fit: fill;
+                        display: block;
                     " 
-                    alt="Código de barras"
                 />
-                <div style="font-size: 7pt; opacity: 0.7;">${fechaActual}</div>
             </div>
         `;
 

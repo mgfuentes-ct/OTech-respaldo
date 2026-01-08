@@ -219,9 +219,28 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest, request: Request)
 
     # 4. Generar código de barras
     codigo = resultado["codigo_otech"]
-    ean = barcode.get('code128', codigo, writer=ImageWriter())
+    from barcode.writer import ImageWriter
+
+    writer_options = {
+        "module_width": 0.22,     # grosor de barra (mm)
+        "module_height": 12.0,   # altura de barras (mm) → CLAVE
+        "quiet_zone": 2.0,       # margen izquierdo/derecho
+        "font_size": 0,          # sin texto abajo
+        "text_distance": 1,      # irrelevante si font_size = 0
+        "background": "white",
+        "foreground": "black",
+        "write_text": False,     # MUY IMPORTANTE
+    }
+
+    ean = barcode.get(
+        "code128",
+        codigo,
+        writer=ImageWriter()
+    )
+
     filename = f"codigos/{codigo}"
-    ean.save(filename)  # Guarda como PNG
+    ean.save(filename, writer_options)
+
 
     # 5. Registrar movimiento de entrada
     registrar_movimiento(resultado["id_pieza"], "registro_inicial", data.id_usuario, "Pieza registrada e ingresada al sistema")
