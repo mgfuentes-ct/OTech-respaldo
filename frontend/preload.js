@@ -2,7 +2,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  imprimirContenido: (htmlContent) => {
-    ipcRenderer.send('imprimir-contenido', htmlContent);
-  }
+  //imprimirContenido: (htmlContent) => {
+    //ipcRenderer.send('imprimir-contenido', htmlContent);
+  //}
+  imprimirTSPL: (tspl) => ipcRenderer.send('imprimir-tspl', tspl),
 });

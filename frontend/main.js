@@ -2,6 +2,8 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
+const fs = require('fs');
+const os = require('os');
 
 let mainWindow;
 
@@ -15,12 +17,15 @@ function createWindow() {
       nodeIntegration: false
     }
   });
+
   win.loadFile('frontend/login.html');
   win.webContents.openDevTools();
   return win;
 }
 
-
+/* ===============================
+   IMPRESIÓN HTML (opcional)
+   =============================== */
 ipcMain.on('imprimir-contenido', (event, htmlContent) => {
   const printWindow = new BrowserWindow({
     show: false,
@@ -42,21 +47,35 @@ ipcMain.on('imprimir-contenido', (event, htmlContent) => {
       silent: true,
       printBackground: true,
       deviceName: 'Ribetec RT-420ME',
-      margins: {margintype: 'custom', top: 0, bottom: 0, left: 0, right: 0}
+      margins: { margintype: 'custom', top: 0, bottom: 0, left: 0, right: 0 }
     }, (success, errorType) => {
       if (!success) {
-        console.error('❌ Error de impresión:', errorType);
+        console.error('Error de impresión HTML:', errorType);
       }
       printWindow.close();
     });
   });
 });
 
+/* ===============================
+   IMPRESIÓN TSPL (LA BUENA)
+   =============================== */
+ipcMain.on('imprimir-tspl', (event, tspl) => {
+  const tmpFile = path.join(os.tmpdir(), `label_${Date.now()}.txt`);
 
+  fs.writeFileSync(tmpFile, tspl, 'utf8');
 
+  exec(`copy /B "${tmpFile}" "\\\\localhost\\RibetecRT420"`, (err) => {
+    if (err) {
+      console.error('Error enviando TSPL:', err);
+    }
+    fs.unlinkSync(tmpFile);
+  });
+});
 
-
-// Iniciar app
+/* ===============================
+   INICIO APP
+   =============================== */
 app.whenReady().then(() => {
   mainWindow = createWindow();
 

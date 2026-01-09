@@ -77,8 +77,9 @@ def crear_pieza(id_producto, numero_serie, id_usuario, caja):
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    codigo_otech = f"OTech-{uuid.uuid4().hex[:8].upper()}-{numero_serie[:8]}"
     
+    numeros = str(uuid.uuid4().int)[:10]
+    codigo_otech = f"OT{numeros}"    
     cursor.execute("""
         INSERT INTO pieza (id_producto, numero_serie, codigo_barras, estado, id_usuario, caja)
         VALUES (%s, %s, %s, 'disponible', %s, %s)  -- ← 'disponible', no 'nuevo'
