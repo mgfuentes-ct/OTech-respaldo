@@ -1,10 +1,33 @@
 <!DOCTYPE html>
-<html>
-<button onclick="imprimir()">🖨️ Imprimir Prueba</button>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba TSPL</title>
+</head>
+<body>
+
+<button onclick="imprimir()">Imprimir Prueba</button>
+
 <script>
 function imprimir() {
-  const contenido = '<div style="font-size:18px; text-align:center;">PRUEBA OTech</div>';
-  window.electronAPI.imprimirContenido(contenido);
+
+  const tspl = `
+SIZE 50 mm,25 mm
+GAP 3 mm,0
+DIRECTION 1
+REFERENCE 0,0
+CLS
+
+TEXT 20,40,"3",0,2,2,"idk que"
+TEXT 20,90,"3",0,2,2,"poner"
+TEXT 20,140,"3",0,2,2,"aqui"
+
+PRINT 1
+`;
+
+  window.electronAPI.imprimirTSPL(tspl);
 }
 </script>
+
+</body>
 </html>

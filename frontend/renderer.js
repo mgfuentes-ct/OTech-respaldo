@@ -643,8 +643,12 @@ async function eliminarUsuario(idUsuario, nombreCompleto) {
 
 
 // Función para imprimir etiqueta TSPL
-// Función para imprimir etiqueta TSPL (CÓDIGO CENTRADO)
-function imprimirEtiquetaTSPL(codigo) {
+function imprimirEtiquetaTSPL(codigo, nombreProducto) {
+  const nombre = nombreProducto.toUpperCase();
+
+  const linea1 = nombre.substring(0, 30);
+  const linea2 = nombre.length > 30 ? nombre.substring(30, 60) : "";
+
   const tspl = `
 SIZE 50 mm,25 mm
 GAP 3 mm,0
@@ -652,14 +656,21 @@ DIRECTION 1
 REFERENCE 0,0
 CLS
 
-// Código de barras centrado
-BARCODE 80,40,"128",70,1,0,2,2,"${codigo}"
+BARCODE 80,25,"128",70,0,0,2,2,"${codigo}"
+
+TEXT 80,98,"3",0,1,1,"${codigo}"
+
+TEXT 50,126,"1",0,1,1,"${linea1}"
+${linea2 ? `TEXT 50,154,"1",0,1,1,"${linea2}"` : ""}
 
 PRINT 1
 `;
 
   window.electronAPI.imprimirTSPL(tspl);
 }
+
+
+
 
 
 
@@ -714,7 +725,7 @@ async function registrarPiezaNueva() {
 
     // IMPRIMIR ETIQUETA EN TSPL (SIN HTML)
     setTimeout(() => {
-      imprimirEtiquetaTSPL(data.codigo_otech);
+      imprimirEtiquetaTSPL(data.codigo_otech,data.nombre_producto);
     }, 300);
 
     resetearFormulario();

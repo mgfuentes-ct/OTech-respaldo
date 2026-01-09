@@ -207,8 +207,10 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest, request: Request)
             data.descripcion_producto,
             data.id_dron
         )
+        nombre_producto = data.nombre_producto
     else:
         id_producto = producto["id_producto"]
+        nombre_producto = producto["nombre"]
 
     # 2. Verificar si pieza ya existe por número de serie
     if pieza_existe_por_serie(data.numero_serie):
@@ -251,7 +253,8 @@ async def registrar_pieza_endpoint(data: RegistroPiezaRequest, request: Request)
     return {
         "mensaje": "Pieza registrada exitosamente",
         "codigo_otech": codigo,
-        "ruta_etiqueta": ruta_absoluta, # cambiamos la ruta (checar por si hay problemas futuros)
+        "ruta_etiqueta": ruta_absoluta, 
+        "nombre_producto": nombre_producto,
         "id_pieza": resultado["id_pieza"]
     }
 
