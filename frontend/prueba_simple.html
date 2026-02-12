@@ -1,33 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Prueba TSPL</title>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8">
+    <title>Prueba TSPL</title>
+  </head>
 
-<button onclick="imprimir()">Imprimir Prueba</button>
 
-<script>
-function imprimir() {
+  <body>
 
-  const tspl = `
-SIZE 50 mm,25 mm
-GAP 3 mm,0
-DIRECTION 1
-REFERENCE 0,0
-CLS
+  <h3>Imprimir etiqueta</h3>
+  
+  <label>
+    Caja:
+    <input type="text" id="caja">
+  </label>
+  <br><br>
 
-TEXT 20,40,"3",0,2,2,"idk que"
-TEXT 20,90,"3",0,2,2,"poner"
-TEXT 20,140,"3",0,2,2,"aqui"
 
-PRINT 1
-`;
+  <label>
+    No. Serie 1:
+    <input type="text" id="serie1">
+  </label>
+  <br><br>
 
-  window.electronAPI.imprimirTSPL(tspl);
-}
-</script>
+  <label>
+    No. Serie 2:
+    <input type="text" id="serie2">
+  </label>
+  <br><br>
 
-</body>
+
+
+  <button onclick="imprimir()">Imprimir Etiqueta</button>
+
+  <script>
+  function imprimir() {
+    const caja = document.getElementById("caja").value;
+    
+    const serie1 = document.getElementById("serie1").value;
+    const serie2 = document.getElementById("serie2").value;
+
+    const tspl = `
+  SIZE 75 mm,50 mm
+  GAP 3 mm,0
+  DIRECTION 1
+  REFERENCE 0,0
+  CLS
+
+  TEXT 20,40,"2",0,2,2,"${caja}"
+  TEXT 20,90,"1",0,2,2,"Modelo: MX700"
+  TEXT 20,140,"1",0,2,2,"Serie 1: ${serie1}"
+  TEXT 20,190,"1",0,2,2,"Serie 2: ${serie2}"
+  TEXT 20,240,"1",0,2,2,"Fecha de entrada: 2025-08-22"
+  PRINT 1
+  `;
+
+    window.electronAPI.imprimirTSPL(tspl);
+  }
+  </script>
+
+  </body>
 </html>

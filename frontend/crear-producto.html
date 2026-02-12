@@ -111,6 +111,42 @@
         .back-link:hover {
             text-decoration: underline;
         }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .checkbox-card {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            background: #fff;
+        }
+
+        .checkbox-card:hover {
+            border-color: #6366f1;
+        }
+
+        .checkbox-card input {
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+
+        .checkbox-card.checked {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -137,12 +173,14 @@
             <input type="text" id="descripcion-producto" placeholder="Ej: Bateria inteligente T25P DB800" required>
         </div>
         <div class="form-group">
-            <label for="dron-producto">Modelo de Dron</label>
-            <select id="dron-producto" required style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
-                <option value="">Selecciona un modelo</option>
-                <!-- Se llenará automaticamente -->
-            </select>
+            <label>Drones compatibles</label>
+
+            <div id="drones-checkbox" class="drones-grid">
+                <!-- Aquí se cargan los drones -->
+            </div>
         </div>
+            
+
         <div class="form-group">
             <label for="stock-minimo">Stock minimo</label>
             <input type="number" id="stock-minimo" placeholder="Ej: 10" required>
@@ -161,63 +199,93 @@
         async function cargarDrones() {
             try {
                 const res = await axios.get(`${API_URL}/admin/listar_drones`);
-                const select = document.getElementById('dron-producto');
-                res.data.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = d.nombre;
-                    select.appendChild(opt);
+                const contenedor = document.getElementById('drones-checkbox');
+
+                if (!contenedor) return;
+
+                contenedor.innerHTML = '';
+
+                res.data.forEach(dron => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-card';
+
+                    label.innerHTML = `
+                        <input type="checkbox" value="${dron.id}">
+                        <span>${dron.nombre}</span>
+                    `;
+
+                    const checkbox = label.querySelector('input');
+                    checkbox.addEventListener('change', () => {
+                        label.classList.toggle('checked', checkbox.checked);
+                    });
+
+                    contenedor.appendChild(label);
                 });
             } catch (err) {
                 console.error("Error al cargar drones:", err);
             }
         }
+
+
         cargarDrones();
 
         async function registrarNuevoProducto() {
-            const codigo = document.getElementById('codigo-producto').value.trim();
-            const nombre = document.getElementById('nombre-producto').value.trim();
-            const descripcion = document.getElementById('descripcion-producto').value.trim();
-            const idDron = document.getElementById('dron-producto').value;
-            const stockMinimo = document.getElementById('stock-minimo').value.trim();
+        const codigo = document.getElementById('codigo-producto').value.trim();
+        const nombre = document.getElementById('nombre-producto').value.trim();
+        const descripcion = document.getElementById('descripcion-producto').value.trim();
+        const stockMinimo = document.getElementById('stock-minimo').value.trim();
 
-            // Validaciones
-            if (!codigo || !nombre || !descripcion || !idDron || !stockMinimo) {
-                Swal.fire('Error', 'Por favor, completa todos los campos.', 'error');
-                return;
-            }
+        const dronesSeleccionados = Array.from(
+            document.querySelectorAll('#drones-checkbox input:checked')
+        ).map(cb => parseInt(cb.value));
 
-            if (stockMinimo < 0) {
-                Swal.fire('Error', 'El stock mínimo no puede ser negativo.', 'error');
-                return;
-            }
-
-            try {
-                const response = await axios.post(`${API_URL}/admin/crear_producto`, null, {
-                    params: {
-                        codigo_original: codigo,
-                        nombre: nombre,
-                        descripcion: descripcion,
-                        id_dron: idDron,
-                        stock_minimo: stockMinimo
-                    }
-                });
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: response.data.mensaje,
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar'
-                }).then(() => {
-                    window.location.href = 'index.html';
-                });
-            } catch (error) {
-                let mensaje = "Error al registrar producto.";
-                if (error.response?.data?.detail) {
-                    mensaje = error.response.data.detail;
-                }
-                Swal.fire('Error', mensaje, 'error');
-            }
+        // Validaciones
+        if (!codigo || !nombre || !descripcion || dronesSeleccionados.length === 0 || !stockMinimo) {
+            Swal.fire('Error', 'Por favor, completa todos los campos.', 'error');
+            return;
         }
+
+        if (parseInt(stockMinimo) < 0) {
+            Swal.fire('Error', 'El stock mínimo no puede ser negativo.', 'error');
+            return;
+        }
+
+        // DEBUG (esto te ayuda muchísimo)
+        console.log({
+            codigo_original: codigo,
+            nombre,
+            descripcion,
+            stock_minimo: parseInt(stockMinimo),
+            drones: dronesSeleccionados
+        });
+
+        try {
+            const response = await axios.post(`${API_URL}/admin/crear_producto`, {
+                codigo_original: codigo,
+                nombre: nombre,
+                descripcion: descripcion,
+                stock_minimo: parseInt(stockMinimo),
+                drones: dronesSeleccionados
+            });
+
+            Swal.fire({
+                title: '¡Éxito!',
+                text: response.data.mensaje,
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            }).then(() => {
+                window.location.href = 'index.html';
+            });
+
+        } catch (error) {
+            console.error(error);
+            let mensaje = 'Error al registrar producto.';
+            if (error.response?.data?.detail) {
+                mensaje = error.response.data.detail;
+            }
+            Swal.fire('Error', mensaje, 'error');
+        }
+    }
     </script>
 </body>
 </html>

@@ -12,7 +12,7 @@
     document.getElementById('btn').onclick = () => {
       const contenido = '<div style="width:180px;text-align:center;font-family:Arial;font-size:19px;"><strong>OTech-PRUEBA</strong><br>¡Funciona!</div>';
       
-      // ✅ SOLO esta línea debe existir para imprimir
+      
       if (window.electronAPI?.imprimirContenido) {
         window.electronAPI.imprimirContenido(contenido);
         alert("¡Comando enviado!");

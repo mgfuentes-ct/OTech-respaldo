@@ -76,29 +76,78 @@ def obtener_pieza_por_serie(numero_serie):
 def crear_pieza(id_producto, numero_serie, id_usuario, caja):
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     
-    numeros = str(uuid.uuid4().int)[:10]
-    codigo_otech = f"OT{numeros}"    
+    #numeros = str(uuid.uuid4().int)[:10]
+    #codigo_otech = f"OT{numeros}"  
+      
+    cursor.execute(
+        "SELECT codigo_original FROM producto WHERE id_producto = %s",
+        (id_producto,)
+    )
+    producto = cursor.fetchone()
+
+    if not producto:
+        raise Exception("Producto no encontrado")
+
+    numero_parte = producto["codigo_original"]
+
     cursor.execute("""
-        INSERT INTO pieza (id_producto, numero_serie, codigo_barras, estado, id_usuario, caja)
-        VALUES (%s, %s, %s, 'disponible', %s, %s)  -- ← 'disponible', no 'nuevo'
-    """, (id_producto, numero_serie, codigo_otech, id_usuario, caja))
-    
+        INSERT INTO pieza (
+            id_producto,
+            numero_serie,
+            codigo_barras,
+            estado,
+            id_usuario,
+            caja
+        )
+        VALUES (%s, %s, %s, 'Disponible', %s, %s)
+    """, (
+        id_producto,
+        numero_serie,
+        numero_parte,   # EL código de barras es el número de parte
+        id_usuario,
+        caja
+    ))
+
     conn.commit()
     id_pieza = cursor.lastrowid
     cursor.close()
     conn.close()
-    
-    return {"id_pieza": id_pieza, "codigo_otech": codigo_otech}
 
-def registrar_movimiento(id_pieza, tipo_movimiento, id_usuario, observaciones=""):
+    return {
+        "id_pieza": id_pieza,
+        "codigo_barras": numero_parte
+    }
+
+def registrar_movimiento(
+    id_pieza,
+    tipo_movimiento,
+    id_usuario,
+    estado_anterior=None,
+    estado_nuevo=None,
+    observaciones=""
+):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO movimiento (id_pieza, tipo_movimiento, estado_anterior, estado_nuevo, id_usuario, observaciones)
-        VALUES (%s, %s, NULL, NULL, %s, %s)
-    """, (id_pieza, tipo_movimiento, id_usuario, observaciones))
+        INSERT INTO movimiento (
+            id_pieza,
+            tipo_movimiento,
+            estado_anterior,
+            estado_nuevo,
+            id_usuario,
+            observaciones
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        id_pieza,
+        tipo_movimiento,
+        estado_anterior,
+        estado_nuevo,
+        id_usuario,
+        observaciones
+    ))
     conn.commit()
     cursor.close()
     conn.close()

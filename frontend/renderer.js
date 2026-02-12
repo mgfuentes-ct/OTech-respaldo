@@ -3,13 +3,50 @@ const API_URL = 'http://localhost:8000';
 // Variables globales
 let inventarioCompleto = [];
 let timeoutInactividad;
+let modoOperacion = null; // 'registro' | 'actualizar'
+let productoActual = null;
+let paginaActual = 1;
+const filasPorPagina = 10;
+let piezasFiltradasGlobal = [];
+
 
 
 // Función para cerrar sesión
 function cerrarSesion() {
-    localStorage.removeItem('usuario');
-    window.location.href = 'login.html';
+    Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: 'Tu sesión se cerrará y tendrás que iniciar sesión nuevamente.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#9ca3af',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+
+            // Mostrar spinner de cerrando sesión
+            Swal.fire({
+                title: 'Finalizando sesión',
+                html: 'Estamos cerrando tu sesión de forma segura…',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // ⏳ Simulación corta para UX (opcional pero recomendado)
+            setTimeout(() => {
+                localStorage.removeItem('usuario');
+                window.location.href = 'login.html';
+            }, 1200);
+        }
+    });
 }
+
+
 
 // Función para reiniciar el temporizador de inactividad
 function reiniciarTemporizadorInactividad() {
@@ -100,64 +137,99 @@ function mostrarResultado(mensaje, tipo, loading = false) {
 // -- Logica de escaneo y acciones -- 
 
 async function buscarCodigo() {
-    const codigoEscaneado = document.getElementById('codigoEscaneado').value.trim();
-    if (!codigoEscaneado) {
-        mostrarResultado("Por favor, ingresa o escanea un código.", "error");
-        return;
-    }
-    mostrarResultado("Buscando...", "loading", true);
+    const codigo = document.getElementById('codigoEscaneado').value.trim();
+    if (!codigo) return;
+
+    resetearFormulario();
+    activarPaso(1);
 
     try {
-        // Endpoint que determina qué tipo de código es y devuelve los datos correspondientes
-        const response = await axios.post(`${API_URL}/buscar_codigo`, { codigo: codigoEscaneado });
-        const resultado = response.data;
+        const res = await axios.post(`${API_URL}/buscar_codigo`, { codigo });
+        const data = res.data;
 
-        // Limpiar campos y secciones
-        resetearFormulario();
-
-        if (resultado.tipo === 'pieza') {
-            // Mostrar interfaz de actualización de estado
-            document.getElementById('datos-pieza-encontrada').style.display = 'block';
-            document.getElementById('btnActualizarEstado').style.display = 'block';
-
-            document.getElementById('nombre-producto-encontrado').value = resultado.pieza.nombre_producto || 'N/A';
-            document.getElementById('numero-serie-encontrado').value = resultado.pieza.numero_serie;
-            document.getElementById('estado-actual-encontrado').value = resultado.pieza.estado;
-            document.getElementById('id-pieza-oculto').value = resultado.pieza.id_pieza;
-            document.getElementById('caja-pieza-encontrada').value = resultado.pieza.caja || 'N/A';
-
-        } else if (resultado.tipo === 'producto') {
-            // Mostrar interfaz de registro de nueva pieza con datos pre-rellenados
-            document.getElementById('datos-nueva-pieza').style.display = 'block';
-            document.getElementById('btnRegistrarPieza').style.display = 'block';
-
-            document.getElementById('codigo-original-nueva').value = resultado.producto.codigo_original;
-            document.getElementById('nombre-producto-nueva').value = resultado.producto.nombre;
-            document.getElementById('descripcion-producto-nueva').value = resultado.producto.descripcion || '';
-            // Asignar id_dron si es necesario
-            if (resultado.producto.id_dron) {
-                // Suponiendo que tienes un select para drones en la sección de nueva pieza
-                // document.getElementById('dron-nueva').value = resultado.producto.id_dron;
-            }
-
-        } else {
-            // Mostrar interfaz para crear nuevo producto y luego registrar pieza
-            document.getElementById('camposProducto').style.display = 'block';
-            document.getElementById('btnRegistrarPieza').style.display = 'block';
-            document.getElementById('codigo-original-nueva').value = codigoEscaneado; // Prellenar con el código escaneado
+        // 1️ SI ES NÚMERO DE SERIE → ACTUALIZAR SIEMPRE
+        if (data.tipo === "numero_serie") {
+            modoOperacion = "actualizar"; // 🔥 CLAVE
+            cargarFormularioActualizar(data.pieza);
+            activarPaso(3);
+            return;
         }
 
-        document.getElementById('resultado').style.display = 'none'; // Ocultar mensaje de búsqueda
+        // 2️ SI ES NÚMERO DE PARTE → MOSTRAR OPCIONES
+        if (data.tipo === "numero_parte") {
+            productoActual = data.producto;
+            document.getElementById("acciones").style.display = "grid";
+            activarPaso(2);
+            return;
+        }
+
+        // 3️ NO EXISTE NI NÚMERO DE SERIE NI NÚMERO DE PARTE
+        if (data.tipo === "nuevo_producto") {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Código no encontrado',
+                html: `
+                    <p>No existe ningún producto registrado con este:</p>
+                    <ul style="text-align:left; margin-top:10px;">
+                        <li><strong>Número de parte</strong></li>
+                        <li><strong>Número de serie</strong></li>
+                    </ul>
+                    <p style="margin-top:12px;">
+                        Si este es un producto nuevo, debes registrarlo desde el
+                        <strong>panel de administración</strong>.
+                    </p>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#163f97'
+            });
+
+            // Reiniciar flujo visual
+            activarPaso(1);
+            return;
+        }
+
 
     } catch (error) {
-        console.error("Error al buscar código:", error);
-        let mensaje = "Error al buscar el código.";
-        if (error.response?.data?.detail) {
-            mensaje = error.response.data.detail;
-        }
-        mostrarResultado(mensaje, "error");
+        mostrarResultado("Error al procesar el código", "error");
     }
 }
+
+
+
+
+
+function seleccionarAccion(tipo) {
+    modoOperacion = tipo;
+
+    document.getElementById("acciones").style.display = "none";
+    activarPaso(3);
+
+    if (tipo === "registro") {
+        document.getElementById("datos-nueva-pieza").style.display = "block";
+
+        //ESTO FALTABA
+        document.getElementById("btnRegistrarPieza").style.display = "block";
+
+        document.getElementById("codigo-original-nueva").value = productoActual.codigo_original;
+        document.getElementById("nombre-producto-nueva").value = productoActual.nombre;
+        document.getElementById("descripcion-producto-nueva").value = productoActual.descripcion || "";
+
+        // UX
+        document.getElementById("numero-serie-nueva").focus();
+    } 
+    else {
+        document.getElementById("scan-serie").style.display = "block";
+        document.getElementById("serieEscaneada").focus();
+    }
+}
+
+
+function activarPaso(paso) {
+    [1,2,3].forEach(n => {
+        document.getElementById(`paso-${n}`).classList.toggle("activo", n === paso);
+    });
+}
+
 
 
 async function actualizarEstadoPieza() {
@@ -165,38 +237,60 @@ async function actualizarEstadoPieza() {
     const nuevoEstado = document.getElementById('nuevo-estado').value;
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     const observaciones = document.getElementById('observaciones-estado').value.trim();
+    const caja = document.getElementById('caja-pieza-encontrada')?.value.trim() || null;
+
 
     if (!idPieza || !nuevoEstado || !usuario) {
-        mostrarResultado("Faltan datos para actualizar el estado.", "error");
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Faltan datos para actualizar el estado',
+            confirmButtonColor: '#ef4444'
+        });
         return;
     }
 
-    mostrarResultado("Actualizando estado...", "loading", true);
-
     try {
-        await axios.post(`${API_URL}/actualizar_estado_pieza`, {
+        const nuevaCaja = document.getElementById('caja-pieza-encontrada').value.trim();
+
+        const response = await axios.post(`${API_URL}/actualizar_estado_pieza`, {
             id_pieza: idPieza,
             nuevo_estado: nuevoEstado,
             id_usuario: usuario.id_usuario,
+            caja: caja,
             observaciones: observaciones
         });
 
-        // Mostrar éxito y limpiar
-        mostrarResultado(`Estado actualizado a: ${nuevoEstado}`, "success");
-        setTimeout(() => {
+
+        
+        Swal.fire({
+            icon: 'success',
+            title: '¡Éxito!',
+            text: response.data.mensaje,
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#6366f1'
+        }).then(() => {
             resetearFormulario();
-            document.getElementById('codigoEscaneado').focus(); // Volver a enfocar escaneo
-        }, 2000);
+            document.getElementById('codigoEscaneado').focus();
+        });
 
     } catch (error) {
         console.error("Error al actualizar estado:", error);
-        let mensaje = "Error al actualizar el estado.";
+
+        let mensaje = 'Error al actualizar el estado';
         if (error.response?.data?.detail) {
             mensaje = error.response.data.detail;
         }
-        mostrarResultado(mensaje, "error");
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: mensaje,
+            confirmButtonColor: '#ef4444'
+        });
     }
 }
+
 
 
 async function registrarPiezaNueva() {
@@ -315,6 +409,16 @@ function resetearFormulario() {
     document.getElementById('nombreProducto').value = '';
     document.getElementById('descripcionProducto').value = '';
     document.getElementById('categoriaProducto').value = '';
+
+    document.getElementById("acciones").style.display = "none";
+    document.getElementById("scan-serie").style.display = "none";
+    activarPaso(1);
+
+
+    const btnActualizar = document.getElementById("btnActualizarEstado");
+    if (btnActualizar) btnActualizar.style.display = "none";
+
+
 }
 
 
@@ -395,6 +499,18 @@ async function registrarNuevoProducto() {
     const categoria = document.getElementById('categoria-producto').value.trim();
     const stockMinimo = document.getElementById('stock-minimo').value.trim();
 
+
+    const dronesSeleccionados = Array.from(
+        document.querySelectorAll('#drones-checkbox input:checked')
+    ).map(cb => parseInt(cb.value));
+
+    if (dronesSeleccionados.length === 0) {
+        Swal.fire('Error', 'Selecciona al menos un dron.', 'error');
+        return;
+    }
+
+
+
     const resultadoDiv = document.getElementById('resultado-admin');
     resultadoDiv.style.display = 'block';
 
@@ -410,8 +526,8 @@ async function registrarNuevoProducto() {
                 codigo_original: codigo,
                 nombre: nombre,
                 descripcion: descripcion,
-                categoria: categoria,
-                stock_minimo: stockMinimo
+                stock_minimo: stockMinimo,
+                drones: dronesSeleccionados
             }
         });
 
@@ -462,13 +578,13 @@ async function registrarNuevoUsuario() {
 
     // Validaciones
     if (!nombreCompleto || !nombreUsuario || !email || !password) {
-        resultadoDiv.innerHTML = '<p style="color: #ef4444;">❌ Por favor, completa todos los campos.</p>';
+        resultadoDiv.innerHTML = '<p style="color: #ef4444;">Por favor, completa todos los campos.</p>';
         resultadoDiv.className = 'result error';
         return;
     }
 
     if (password.length < 6) {
-        resultadoDiv.innerHTML = '<p style="color: #ef4444;">❌ La contraseña debe tener al menos 6 caracteres.</p>';
+        resultadoDiv.innerHTML = '<p style="color: #ef4444;">La contraseña debe tener al menos 6 caracteres.</p>';
         resultadoDiv.className = 'result error';
         return;
     }
@@ -656,9 +772,9 @@ DIRECTION 1
 REFERENCE 0,0
 CLS
 
-BARCODE 80,25,"128",70,0,0,2,2,"${codigo}"
+BARCODE 30,25,"128",70,0,0,2,2,"${codigo}"
 
-TEXT 80,98,"3",0,1,1,"${codigo}"
+
 
 TEXT 50,126,"1",0,1,1,"${linea1}"
 ${linea2 ? `TEXT 50,154,"1",0,1,1,"${linea2}"` : ""}
@@ -791,6 +907,33 @@ async function cargarInventario() {
     }
 }
 
+async function cargarDronesCheckbox() {
+    const contenedor = document.getElementById('drones-checkbox');
+    contenedor.innerHTML = '';
+
+    const res = await axios.get(`${API_URL}/admin/listar_drones`);
+    const drones = res.data;
+
+    drones.forEach(dron => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-card';
+
+        label.innerHTML = `
+            <input type="checkbox" value="${dron.id}">
+            <span>${dron.nombre}</span>
+        `;
+
+        const checkbox = label.querySelector('input');
+
+        checkbox.addEventListener('change', () => {
+            label.classList.toggle('checked', checkbox.checked);
+        });
+
+        contenedor.appendChild(label);
+    });
+}
+
+
 // Función para aplicar filtros
 function aplicarFiltros() {
     const filtroSerie = document.getElementById('filtro-serie')?.value.toLowerCase() || '';
@@ -834,7 +977,6 @@ function aplicarFiltros() {
                 <td>${pieza.id_pieza}</td>
                 <td>${pieza.nombre_producto}</td>
                 <td>${pieza.nombre_dron}</td>
-                <td><strong>${pieza.codigo_barras}</strong></td>
                 <td>${pieza.numero_serie}</td>
                 <td><span class="${estadoClass}">${pieza.estado}</span></td>
                 <td>${fecha}</td>
@@ -845,7 +987,164 @@ function aplicarFiltros() {
             tbody.appendChild(row);
         });
     }
+
+    piezasFiltradasGlobal = inventarioCompleto.filter(pieza => {
+        return (
+            pieza.numero_serie.toLowerCase().includes(filtroSerie) &&
+            (filtroEstado === '' || pieza.estado === filtroEstado) &&
+            (filtroProducto === '' || pieza.nombre_producto === filtroProducto)
+        );
+    });
+
+    paginaActual = 1;
+    renderizarTabla();
+    renderizarPaginacion();
+
 }
+
+// renderizar tabla con paginación
+function renderizarTabla() {
+    const tbody = document.getElementById('inventario-body');
+    tbody.innerHTML = '';
+
+    const inicio = (paginaActual - 1) * filasPorPagina;
+    const fin = inicio + filasPorPagina;
+    const paginaDatos = piezasFiltradasGlobal.slice(inicio, fin);
+
+    if (paginaDatos.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align:center; padding:30px; color:#9ca3af;">
+                    No hay resultados
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    paginaDatos.forEach(pieza => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${pieza.id_pieza}</td>
+            <td>${pieza.nombre_producto}</td>
+            <td>${pieza.nombre_dron}</td>
+            <td>${pieza.numero_serie}</td>
+            <td><span class="estado-${pieza.estado}">${pieza.estado}</span></td>
+            <td>${new Date(pieza.fecha_registro).toLocaleString()}</td>
+            <td>${pieza.nombre_usuario || 'N/A'}</td>
+            <td>${pieza.caja}</td>
+            <td>
+                <button 
+                    onclick="verHistorial(${pieza.id_pieza})"
+                    style="padding:6px 10px; background:#6366f1; color:white; border:none; border-radius:6px; cursor:pointer;">
+                    +
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+//redenrizar paginación
+function renderizarPaginacion() {
+    const totalPaginas = Math.ceil(piezasFiltradasGlobal.length / filasPorPagina);
+    const contenedor = document.getElementById('paginas');
+    contenedor.innerHTML = '';
+
+    const maxVisible = 5;
+    let inicio = Math.max(1, paginaActual - 2);
+    let fin = Math.min(totalPaginas, inicio + maxVisible - 1);
+
+    for (let i = inicio; i <= fin; i++) {
+        const span = document.createElement('span');
+        span.textContent = i;
+        span.className = `page-number ${i === paginaActual ? 'active' : ''}`;
+        span.onclick = () => {
+            paginaActual = i;
+            renderizarTabla();
+            renderizarPaginacion();
+        };
+        contenedor.appendChild(span);
+    }
+
+    document.getElementById('btn-first').disabled = paginaActual === 1;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+    document.getElementById('btn-last').disabled = paginaActual === totalPaginas;
+}
+
+
+async function verHistorial(idPieza) {
+    try {
+        const res = await axios.get(`${API_URL}/historial/pieza/${idPieza}`);
+        const historial = res.data;
+
+        if (historial.length === 0) {
+            Swal.fire('Sin historial', 'Esta pieza no tiene movimientos registrados.', 'info');
+            return;
+        }
+
+        const timeline = historial.map(m => {
+            const fecha = new Date(m.fecha_movimiento).toLocaleString();
+
+            let color = '#64748b';
+            if (m.tipo_movimiento === 'registro_inicial') color = '#10b981';
+            if (m.tipo_movimiento === 'cambio_estado') color = '#6366f1';
+
+            return `
+                <div style="border-left:4px solid ${color}; padding-left:12px; margin-bottom:16px;">
+                    <div style="font-weight:600; color:${color};">
+                        ${m.tipo_movimiento.replace('_', ' ').toUpperCase()}
+                    </div>
+                    <div style="font-size:13px; color:#374151;">
+                        ${m.estado_anterior ? `${m.estado_anterior} → ` : ''}${m.estado_nuevo || ''}
+                    </div>
+                    <div style="font-size:12px; color:#6b7280;">
+                        ${fecha} · ${m.nombre_usuario || 'Usuario eliminado'}
+                    </div>
+                    ${m.observaciones ? `<div style="margin-top:4px; font-size:12px;">${m.observaciones}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        Swal.fire({
+            title: `Historial de la pieza #${idPieza}`,
+            html: `<div style="max-height:400px; overflow-y:auto; text-align:left;">${timeline}</div>`,
+            width: 700,
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#6366f1'
+        });
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Error', 'No se pudo cargar el historial.', 'error');
+    }
+}
+
+
+
+function exportarHistorialPorFechas() {
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+
+    if (!usuario || usuario.rol !== 'Admin') {
+        Swal.fire('Acceso denegado', 'Solo administradores pueden exportar.', 'error');
+        return;
+    }
+
+    const inicio = document.getElementById('historial-fecha-inicio').value;
+    const fin = document.getElementById('historial-fecha-fin').value;
+
+    if (!inicio || !fin) {
+        Swal.fire('Error', 'Selecciona un rango de fechas.', 'error');
+        return;
+    }
+
+    const url = `${API_URL}/exportar/historial?fecha_inicio=${inicio}&fecha_fin=${fin}&id_usuario=${usuario.id_usuario}`;
+    window.open(url, '_blank');
+}
+
+
+
 
 // Función para cargar alertas de stock
 async function cargarAlertasStock() {
@@ -985,6 +1284,95 @@ async function exportarInventario() {
     }
 }
 
+function mostrarRegistroPieza() {
+    modoOperacion = "registro";
+
+    ocultarTodo();
+
+    document.getElementById("datos-nueva-pieza").style.display = "block";
+
+    document.getElementById("codigo-original-nueva").value = productoActual.codigo_original;
+    document.getElementById("nombre-producto-nueva").value = productoActual.nombre;
+    document.getElementById("descripcion-producto-nueva").value = productoActual.descripcion || "";
+}
+
+
+function mostrarActualizarPieza() {
+    modoOperacion = "actualizar";
+
+    ocultarTodo();
+
+    Swal.fire({
+        title: "Escanea el número de serie",
+        text: "Escanea ahora el número de serie de la pieza",
+        icon: "info"
+    });
+
+    document.getElementById("codigoEscaneado").value = "";
+    document.getElementById("codigoEscaneado").focus();
+}
+
+
+function cargarFormularioActualizar(pieza) {
+    ocultarTodo();
+
+    document.getElementById("datos-pieza-encontrada").style.display = "block";
+    document.getElementById("btnActualizarEstado").style.display = "block";
+
+    document.getElementById("nombre-producto-encontrado").value = pieza.nombre_producto;
+    document.getElementById("numero-serie-encontrado").value = pieza.numero_serie;
+    document.getElementById("estado-actual-encontrado").value = pieza.estado;
+    document.getElementById("caja-pieza-encontrada").value = pieza.caja || "";
+    document.getElementById("id-pieza-oculto").value = pieza.id_pieza;
+}
+
+
+
+
+function ocultarTodo() {
+    const secciones = [
+        'datos-pieza-encontrada',
+        'datos-nueva-pieza',
+        'camposProducto',
+        'opcionesNumeroParte',
+        'selector-piezas'
+    ];
+
+    secciones.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+}
+
+
+
+async function verHistorialPieza(idPieza) {
+    try {
+        const res = await axios.get(`http://localhost:8000/historial_pieza/${idPieza}`);
+        const tbody = document.getElementById("historial-body");
+        tbody.innerHTML = "";
+
+        res.data.forEach(m => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${new Date(m.fecha_movimiento).toLocaleString()}</td>
+                <td>${m.tipo_movimiento}</td>
+                <td>${m.usuario || '—'}</td>
+                <td>${m.observaciones || ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById("modal-historial").style.display = "flex";
+    } catch (err) {
+        Swal.fire("Error", "No se pudo cargar el historial", "error");
+    }
+}
+
+function cerrarModalHistorial() {
+    document.getElementById("modal-historial").style.display = "none";
+}
+
 
 
 function mostrarNotificacion(mensaje, tipo) {
@@ -1021,6 +1409,7 @@ document.addEventListener('DOMContentLoaded', function() {
     iniciarMonitoreoInactividad();
     showSection('registro');
     cargarAlertasStock();
+    cargarDronesCheckbox();
 
     document.addEventListener('input', function(e) {
         if (e.target.id === 'filtro-serie') {
@@ -1034,6 +1423,49 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+function aplicarTema(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+
+    const btn = document.getElementById('toggle-theme');
+    if (btn) {
+        btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+// Cargar tema guardado
+document.addEventListener('DOMContentLoaded', () => {
+    const temaGuardado = localStorage.getItem('theme') || 'light';
+    aplicarTema(temaGuardado);
+
+    const btn = document.getElementById('toggle-theme');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const temaActual = document.documentElement.getAttribute('data-theme');
+            aplicarTema(temaActual === 'dark' ? 'light' : 'dark');
+        });
+    }
+});
+
+function toggleDarkMode() {
+    document.body.classList.toggle("dark");
+
+    // Guardar preferencia
+    const isDark = document.body.classList.contains("dark");
+    localStorage.setItem("modoOscuro", isDark ? "1" : "0");
+}
+
+// Cargar preferencia al iniciar
+document.addEventListener("DOMContentLoaded", () => {
+    const modoOscuro = localStorage.getItem("modoOscuro");
+    if (modoOscuro === "1") {
+        document.body.classList.add("dark");
+    }
+});
+
+
 
 // Eventos para escaneo con Enter
 document.getElementById('codigoOriginal')?.addEventListener('keypress', function(e) {
@@ -1049,5 +1481,36 @@ document.getElementById('numeroSerie')?.addEventListener('keypress', function(e)
 });
 
 
+document.getElementById('serieEscaneada')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('codigoEscaneado').value = this.value;
+        this.value = '';
+        buscarCodigo();
+    }
+});
 
 
+document.getElementById('btn-first').onclick = () => {
+    paginaActual = 1;
+    renderizarTabla();
+    renderizarPaginacion();
+};
+
+document.getElementById('btn-prev').onclick = () => {
+    if (paginaActual > 1) paginaActual--;
+    renderizarTabla();
+    renderizarPaginacion();
+};
+
+document.getElementById('btn-next').onclick = () => {
+    const totalPaginas = Math.ceil(piezasFiltradasGlobal.length / filasPorPagina);
+    if (paginaActual < totalPaginas) paginaActual++;
+    renderizarTabla();
+    renderizarPaginacion();
+};
+
+document.getElementById('btn-last').onclick = () => {
+    paginaActual = Math.ceil(piezasFiltradasGlobal.length / filasPorPagina);
+    renderizarTabla();
+    renderizarPaginacion();
+};
