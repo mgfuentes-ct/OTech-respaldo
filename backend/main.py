@@ -730,11 +730,35 @@ async def registrar_inventario(data: RegistrarInventarioRequest):
             observaciones=data.observaciones or "Inventario registrado"
         )
 
+        cursor.execute("""
+            SELECT
+                i.id_inventario,
+                i.numero_serie,
+                i.fecha_entrada,
+                p.codigo_original,
+                p.nombre AS nombre_producto,
+                ma.nombre AS marca,
+                tp.nombre AS tipo_producto,
+                mo.nombre AS modelo,
+                e.nombre AS estado,
+                u.codigo AS ubicacion
+            FROM inventario i
+            JOIN producto p ON i.id_producto = p.id_producto
+            JOIN marca ma ON p.id_marca = ma.id_marca
+            JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
+            LEFT JOIN modelo mo ON p.id_modelo = mo.id_modelo
+            LEFT JOIN estado e ON i.id_estado = e.id_estado
+            LEFT JOIN ubicacion u ON i.id_ubicacion = u.id_ubicacion
+            WHERE i.id_inventario = %s
+        """, (id_inventario,))
+        inventario_creado = cursor.fetchone()
+
         conn.commit()
 
         return {
             "mensaje": "Inventario registrado correctamente",
-            "id_inventario": id_inventario
+            "id_inventario": id_inventario,
+            "inventario": inventario_creado
         }
 
     except HTTPException:

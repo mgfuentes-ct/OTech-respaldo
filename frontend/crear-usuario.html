@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:8000;">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:8000;">
     <title>Crear Usuario - OTech</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <nav class="navbar">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo" style="display: block; margin: 0 auto 20px auto; width: 60px;">
-            <a href="index.html" class="navbar-brand">OTech inventario</a>
-        </div>
+        <a href="index.html" class="navbar-brand">Inventario OTech / MXD</a>
     </nav>
 
     <div class="container">
         <h1 style="margin-bottom: 40px;">Crear Nuevo Usuario</h1>
-        
+
         <div class="grid-form">
             <div class="form-group">
                 <label for="admin-nombre">Nombre completo</label>
@@ -48,7 +48,8 @@
         </div>
 
         <div class="full-width" style="margin-top: 20px;">
-            <button onclick="registrarNuevoUsuario()" style="max-width: 300px; margin: 0 auto; display: block;">Guardar Usuario</button>
+            <button onclick="registrarNuevoUsuario()" style="max-width: 300px; margin: 0 auto; display: block;">Guardar
+                Usuario</button>
             <div style="text-align: center;">
                 <a href="index.html" class="back-link">← Volver al Inventario</a>
             </div>
@@ -102,19 +103,19 @@
 
             const inputs = ['admin-nombre', 'admin-usuario', 'admin-email', 'admin-password', 'admin-password-confirm'];
             let hasErrors = false;
-            
+
             // Simular evento input en todos para forzar validacion manual si intentan hacer submit en vacio
             inputs.forEach(id => {
                 const el = document.getElementById(id);
                 el.dispatchEvent(new Event('input'));
-                if (el.classList.contains('invalid') || !el.value.trim()) { 
+                if (el.classList.contains('invalid') || !el.value.trim()) {
                     if (!el.value.trim()) el.classList.add('invalid');
-                    hasErrors = true; 
+                    hasErrors = true;
                 }
             });
 
             if (hasErrors) {
-                Swal.fire({icon: 'warning', title: 'Campos incompletos', text: 'Corrige los errores marcados en rojo.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000});
+                Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Corrige los errores marcados en rojo.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
                 return;
             }
 
@@ -146,4 +147,5 @@
     </script>
     <script src="theme.js"></script>
 </body>
+
 </html>

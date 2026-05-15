@@ -146,6 +146,33 @@ function obtenerProducto(item) {
     return item.nombre_producto || item.producto || item.nombre || '—';
 }
 
+function obtenerNumeroParte(item) {
+    return item.codigo_original || item.numero_parte || item.codigo_producto || item.codigo || item.numeroParte || '—';
+}
+
+function obtenerMarcaNormalizada(item) {
+    if (!item) return '';
+    return (
+        item.marca ||
+        item.nombre_marca ||
+        item.nombre_brand ||
+        item.brand ||
+        item.marca_producto ||
+        item.producto_marca ||
+        ''
+    ).toString().trim().toUpperCase();
+}
+
+function esMarcaMXD(item) {
+    const marca = obtenerMarcaNormalizada(item);
+    if (marca === 'MXD' || marca.includes('MEXICAN DRONE')) return true;
+
+    // Fallback únicamente cuando el texto del producto/modelo empieza claramente con MX.
+    const producto = obtenerProducto(item).toString().trim().toUpperCase();
+    const modelo = obtenerModelo(item).toString().trim().toUpperCase();
+    return producto.startsWith('MXD') || modelo.startsWith('MXD') || modelo.startsWith('MX');
+}
+
 function obtenerEstado(item) {
     return item.estado || item.nombre_estado || '—';
 }
@@ -277,26 +304,11 @@ function mostrarNombreUsuario() {
 /* =========================
    MODO OSCURO
 ========================= */
-function aplicarTema(theme) {
-    const tema = theme || localStorage.getItem('theme') || localStorage.getItem('modoOscuro') === '1' ? 'dark' : 'light';
-
-    document.documentElement.setAttribute('data-theme', tema);
-    document.body.classList.toggle('dark', tema === 'dark');
-
-    localStorage.setItem('theme', tema);
-    localStorage.setItem('modoOscuro', tema === 'dark' ? '1' : '0');
-
-    const btn = $('toggle-theme') || document.querySelector('.toggle-theme');
-    if (btn) btn.textContent = tema === 'dark' ? '☀️' : '🌙';
-
-    if (inventarioCompleto.length > 0) {
-        dibujarGraficaInventario();
-    }
-}
-
-function toggleDarkMode() {
-    const actual = document.documentElement.getAttribute('data-theme') || 'light';
-    aplicarTema(actual === 'dark' ? 'light' : 'dark');
+function aplicarTema() {
+    // Force light theme
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.body.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
 }
 
 /* =========================
@@ -364,20 +376,10 @@ function activarPaso(paso) {
 
 function ocultarTodo() {
     [
-        'datos-pieza-encontrada',
-        'datos-nueva-pieza',
-        'camposProducto',
-        'opcionesNumeroParte',
-        'selector-piezas',
-        'acciones',
-        'scan-serie'
+        'opciones-producto',
+        'form-registro-inventario',
+        'form-actualizar-inventario'
     ].forEach(ocultarElemento);
-
-    const btnActualizar = $('btnActualizarEstado');
-    if (btnActualizar) btnActualizar.style.display = 'none';
-
-    const btnRegistrar = $('btnRegistrarPieza');
-    if (btnRegistrar) btnRegistrar.style.display = 'none';
 }
 
 function resetearFormulario() {
@@ -386,26 +388,31 @@ function resetearFormulario() {
 
     [
         'codigoEscaneado',
-        'serieEscaneada',
-        'nombre-producto-encontrado',
-        'numero-serie-encontrado',
-        'estado-actual-encontrado',
-        'caja-pieza-encontrada',
-        'id-pieza-oculto',
-        'observaciones-estado',
-        'codigo-original-nueva',
-        'numero-serie-nueva',
-        'nombre-producto-nueva',
-        'descripcion-producto-nueva',
-        'caja-nueva',
-        'nombreProducto',
-        'descripcionProducto',
-        'categoriaProducto'
+        'registro-numero-parte',
+        'registro-producto-nombre',
+        'registro-numero-serie',
+        'registro-fecha-entrada',
+        'registro-observaciones',
+        'actualizar-numero-parte',
+        'actualizar-producto-nombre',
+        'actualizar-numero-serie',
+        'actualizar-fecha-salida',
+        'actualizar-destinatario',
+        'actualizar-observaciones'
     ].forEach(id => setValue(id, ''));
 
-    if ($('nuevo-estado')) $('nuevo-estado').value = 'Disponible';
-
-    activarPaso(1);
+    if ($('registro-para-venta')) $('registro-para-venta').value = '0';
+    if ($('actualizar-vendido')) $('actualizar-vendido').value = '0';
+    if ($('actualizar-prestamo')) $('actualizar-prestamo').value = '0';
+    if ($('actualizar-para-venta')) $('actualizar-para-venta').value = '0';
+    if ($('registro-id-ubicacion')) $('registro-id-ubicacion').value = '';
+    if ($('actualizar-id-ubicacion')) $('actualizar-id-ubicacion').value = '';
+    if ($('registro-estado')) $('registro-estado').value = '';
+    if ($('actualizar-estado')) $('actualizar-estado').value = '';
+    if ($('registro-id-producto')) $('registro-id-producto').value = '';
+    
+    const today = new Date().toISOString().split('T')[0];
+    if ($('registro-fecha-entrada')) $('registro-fecha-entrada').value = today;
 }
 
 /* =========================
@@ -440,28 +447,14 @@ async function buscarCodigo() {
 
         if (data.tipo === 'numero_parte') {
             productoActual = data.producto;
-            mostrarElemento('acciones', 'grid');
-            activarPaso(2);
+            mostrarRegistroInventario();
             return;
         }
 
-        Swal.fire({
-            icon: 'warning',
-            title: 'Código no encontrado',
-            html: `
-                <p>No existe ningún producto o pieza registrada con este código:</p>
-                <p style="font-weight:700; margin-top:8px;">${codigo}</p>
-                <p style="font-size:13px; color:#6b7280; margin-top:10px;">
-                    Si es un producto nuevo, regístralo desde <strong>Administración → Nuevo producto</strong>.
-                </p>
-            `,
-            confirmButtonText: 'Entendido',
-            confirmButtonColor: '#163f97'
-        });
-
-        setValue('codigoEscaneado', '');
-        $('codigoEscaneado')?.focus();
-        activarPaso(1);
+        productoActual = null;
+        mostrarRegistroInventario();
+        setValue('registro-numero-serie', codigo);
+        return;
 
     } catch (error) {
         console.error('Error al procesar el código:', error);
@@ -469,28 +462,24 @@ async function buscarCodigo() {
     }
 }
 
-function seleccionarAccion(tipo) {
-    modoOperacion = tipo;
+function mostrarRegistroInventario() {
+    modoOperacion = 'registro';
+    ocultarTodo();
+    mostrarElemento('form-registro-inventario');
 
-    ocultarElemento('acciones');
-    activarPaso(3);
-
-    if (tipo === 'registro') {
-        mostrarElemento('datos-nueva-pieza');
-        mostrarElemento('btnRegistrarPieza');
-
-        if (productoActual) {
-            setValue('codigo-original-nueva', productoActual.codigo_original || productoActual.numero_parte || '');
-            setValue('nombre-producto-nueva', productoActual.nombre || productoActual.nombre_producto || '');
-            setValue('descripcion-producto-nueva', productoActual.descripcion || '');
-        }
-
-        $('numero-serie-nueva')?.focus();
-        return;
+    if (productoActual) {
+        setValue('registro-numero-parte', productoActual.codigo_original || productoActual.numero_parte || '');
+        setValue('registro-producto-nombre', productoActual.nombre || productoActual.nombre_producto || '');
+        setValue('registro-id-producto', productoActual.id_producto || '');
     }
 
-    mostrarElemento('scan-serie');
-    $('serieEscaneada')?.focus();
+    $('registro-numero-serie')?.focus();
+}
+
+function mostrarActualizarInventario() {
+    modoOperacion = 'actualizar';
+    ocultarTodo();
+    mostrarElemento('form-actualizar-inventario');
 }
 
 function cargarFormularioActualizar(pieza) {
@@ -500,67 +489,90 @@ function cargarFormularioActualizar(pieza) {
     }
 
     ocultarTodo();
+    mostrarElemento('form-actualizar-inventario');
 
-    mostrarElemento('datos-pieza-encontrada');
-    mostrarElemento('btnActualizarEstado');
+    setValue('actualizar-numero-parte', pieza.codigo_original || '');
+    setValue('actualizar-producto-nombre', obtenerProducto(pieza));
+    setValue('actualizar-id-inventario', obtenerIdInventario(pieza));
+    setValue('actualizar-numero-serie', pieza.numero_serie || '');
+    
+    if ($('actualizar-estado') && pieza.id_estado) {
+        $('actualizar-estado').value = pieza.id_estado;
+    }
+    if ($('actualizar-id-ubicacion') && pieza.id_ubicacion) {
+        $('actualizar-id-ubicacion').value = pieza.id_ubicacion;
+    }
+    
+    setValue('actualizar-destinatario', pieza.destinatario || '');
+    
+    if ($('actualizar-vendido')) $('actualizar-vendido').value = (pieza.vendido === 1 || pieza.vendido === true) ? '1' : '0';
+    if ($('actualizar-prestamo')) $('actualizar-prestamo').value = (pieza.prestamo === 1 || pieza.prestamo === true) ? '1' : '0';
+    if ($('actualizar-para-venta')) $('actualizar-para-venta').value = (pieza.para_venta === 1 || pieza.para_venta === true) ? '1' : '0';
 
-    setValue('nombre-producto-encontrado', obtenerProducto(pieza));
-    setValue('numero-serie-encontrado', pieza.numero_serie || '');
-    setValue('estado-actual-encontrado', obtenerEstado(pieza));
-    setValue('caja-pieza-encontrada', pieza.caja || pieza.anaquel || pieza.ubicacion || pieza.nombre_ubicacion || '');
-    setValue('id-pieza-oculto', obtenerIdInventario(pieza));
+    // Evaluar visibilidad del destinatario al cargar
+    manejarCambioEstadoActualizar();
+}
 
-    if ($('nuevo-estado') && pieza.id_estado) {
-        $('nuevo-estado').value = pieza.id_estado;
+function manejarCambioEstadoActualizar() {
+    const select = $('actualizar-estado');
+    const inputDestinatario = $('actualizar-destinatario');
+    if (!select || !inputDestinatario) return;
+    
+    const textoEstado = select.options[select.selectedIndex]?.text || '';
+    const normalizado = normalizarTexto(textoEstado);
+    
+    // prestado, garantia, proyecto y venta final
+    const requiereDestinatario = 
+        normalizado.includes('prestado') || 
+        normalizado.includes('préstamo') ||
+        normalizado.includes('garantia') || 
+        normalizado.includes('garantía') || 
+        normalizado.includes('proyecto') || 
+        normalizado.includes('venta final');
+        
+    const parent = inputDestinatario.closest('.form-group');
+    if (parent) {
+        parent.style.display = requiereDestinatario ? 'block' : 'none';
+    }
+    
+    // Si no requiere, limpiamos el valor para evitar basura en la DB
+    if (!requiereDestinatario) {
+        inputDestinatario.value = '';
     }
 }
 
-async function actualizarEstadoPieza() {
-    const idPieza = getValue('id-pieza-oculto');
-    const nuevoEstado = getValue('nuevo-estado');
-    const caja = getValue('caja-pieza-encontrada') || null;
-    const observaciones = getValue('observaciones-estado');
+async function actualizarInventario() {
+    const idInventario = getValue('actualizar-id-inventario');
+    const idEstado = getValue('actualizar-estado');
+    const idUbicacion = getValue('actualizar-id-ubicacion');
     const usuario = obtenerUsuarioSesion();
 
-    if (!idPieza || !nuevoEstado || !usuario) {
+    if (!idInventario || !idEstado || !usuario) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Faltan datos para actualizar el estado.',
+            text: 'Faltan datos obligatorios (Estado).',
             confirmButtonColor: '#ef4444'
         });
         return;
     }
 
-    const payloadLegacy = {
-        id_pieza: parseInt(idPieza, 10),
-        nuevo_estado: nuevoEstado,
-        id_usuario: usuario.id_usuario,
-        caja,
-        observaciones
-    };
-
-    const payloadNuevo = {
-        id_inventario: parseInt(idPieza, 10),
-        id_estado: Number.isNaN(parseInt(nuevoEstado, 10)) ? undefined : parseInt(nuevoEstado, 10),
-        id_ubicacion: null,
-        observaciones,
+    const payload = {
+        id_inventario: parseInt(idInventario, 10),
+        id_estado: parseInt(idEstado, 10),
+        id_ubicacion: idUbicacion ? parseInt(idUbicacion, 10) : null,
+        fecha_salida: getValue('actualizar-fecha-salida') || null,
+        vendido: getValue('actualizar-vendido') === '1',
+        prestamo: getValue('actualizar-prestamo') === '1',
+        para_venta: getValue('actualizar-para-venta') === '1',
+        destinatario: getValue('actualizar-destinatario') || null,
+        observaciones: getValue('actualizar-observaciones') || null,
         id_usuario: usuario.id_usuario
     };
 
     try {
-        let response;
-
-        try {
-            response = await axios.post(`${API_URL}/actualizar_estado_pieza`, payloadLegacy);
-        } catch (legacyError) {
-            if (legacyError.response?.status === 404) {
-                response = await axios.post(`${API_URL}/actualizar_inventario`, payloadNuevo);
-            } else {
-                throw legacyError;
-            }
-        }
-
+        const response = await axios.post(`${API_URL}/inventario/actualizar`, payload);
+        
         Swal.fire({
             icon: 'success',
             title: '¡Éxito!',
@@ -574,75 +586,101 @@ async function actualizarEstadoPieza() {
         });
 
     } catch (error) {
-        console.error('Error al actualizar estado:', error);
+        console.error('Error al actualizar inventario:', error);
         mostrarErrorSweet(error, 'Error al actualizar');
     }
 }
 
-async function registrarPiezaNueva() {
-    const codigoOriginal = getValue('codigo-original-nueva');
-    const numeroSerie = getValue('numero-serie-nueva');
-    const caja = getValue('caja-nueva');
+async function registrarInventario() {
+    const numeroParte = getValue('registro-numero-parte');
+    const idProducto = getValue('registro-id-producto');
+    const numeroSerie = getValue('registro-numero-serie');
+    const idUbicacion = getValue('registro-id-ubicacion');
+    const idEstado = getValue('registro-estado');
     const usuario = obtenerUsuarioSesion();
 
-    const nombreProducto = getValue('nombre-producto-nueva') || null;
-    const descripcionProducto = getValue('descripcion-producto-nueva') || null;
-
-    let idDron = null;
-    const dronField = $('dron-nueva');
-    if (dronField && dronField.value) idDron = parseInt(dronField.value, 10);
-
-    if (!numeroSerie || !caja || !usuario) {
-        mostrarResultado('Faltan datos obligatorios.', 'error');
+    if (!numeroParte && !idProducto) {
+        mostrarResultado('Falta el número de parte del producto. Registra el producto antes en Administración.', 'error');
         return;
     }
 
-    if (!codigoOriginal) {
-        mostrarResultado('Código original no encontrado.', 'error');
+    if (!numeroSerie) {
+        mostrarResultado('Falta el número de serie único de la pieza.', 'error');
         return;
     }
 
-    mostrarResultado('Registrando nueva pieza...', 'loading', true);
+    if (!idEstado || !usuario) {
+        mostrarResultado('Faltan datos obligatorios (Estado).', 'error');
+        return;
+    }
+
+    mostrarResultado('Registrando entrada...', 'loading', true);
 
     try {
-        const response = await axios.post(`${API_URL}/registrar_pieza`, {
-            codigo_original: codigoOriginal,
+        const payload = {
+            id_producto: parseInt(idProducto, 10),
             numero_serie: numeroSerie,
-            nombre_producto: nombreProducto,
-            descripcion_producto: descripcionProducto,
-            id_dron: idDron,
-            caja,
-            id_usuario: usuario.id_usuario
-        });
+            fecha_entrada: getValue('registro-fecha-entrada') || null,
+            id_estado: parseInt(idEstado, 10),
+            id_ubicacion: idUbicacion ? parseInt(idUbicacion, 10) : null,
+            id_usuario_registro: usuario.id_usuario,
+            vendido: false,
+            prestamo: false,
+            para_venta: getValue('registro-para-venta') === '1',
+            destinatario: null,
+            observaciones: getValue('registro-observaciones') || null
+        };
 
-        const data = response.data;
+        const response = await axios.post(`${API_URL}/inventario/registrar`, payload);
+        const data = response.data.inventario || response.data;
+
+        const productoParaValidarMarca = {
+            ...(productoActual || {}),
+            ...(data || {}),
+            nombre_producto: data.nombre_producto || getValue('registro-producto-nombre'),
+            codigo_original: data.codigo_original || numeroParte,
+            numero_serie: numeroSerie
+        };
+
+        const debeImprimirEtiqueta = esMarcaMXD(productoParaValidarMarca);
 
         mostrarResultado(`
             <h3>Éxito</h3>
-            <p><strong>Código:</strong> ${data.codigo_barras || data.codigo_otech || codigoOriginal}</p>
+            <p><strong>Número de parte:</strong> ${productoParaValidarMarca.codigo_original}</p>
+            <p><strong>Número de serie:</strong> ${numeroSerie}</p>
             <p>La pieza fue registrada correctamente.</p>
+            <p style="margin-top:8px; color:${debeImprimirEtiqueta ? '#065f46' : '#6b7280'};">
+                ${debeImprimirEtiqueta ? 'Etiqueta MXD enviada a impresión.' : 'No se imprimió etiqueta (producto no es MXD).'}
+            </p>
         `, 'success');
 
-        if (window.electronAPI && window.electronAPI.imprimirTSPL) {
+        if (debeImprimirEtiqueta && window.electronAPI && window.electronAPI.imprimirTSPL) {
             setTimeout(() => {
-                imprimirEtiquetaTSPL(data.codigo_barras || data.codigo_otech || codigoOriginal, data.nombre_producto || nombreProducto || 'PRODUCTO');
+                imprimirEtiquetaMXD({
+                    numeroParte: productoParaValidarMarca.codigo_original,
+                    numeroSerie: numeroSerie,
+                    nombreProducto: productoParaValidarMarca.nombre_producto || 'PRODUCTO MXD',
+                    modelo: productoActual?.modelo || productoActual?.nombre_modelo || data.modelo || '',
+                    ubicacion: data.ubicacion || ''
+                });
             }, 300);
         }
 
         resetearFormulario();
         $('codigoEscaneado')?.focus();
         cargarAlertasStock();
+        cargarInventario();
 
     } catch (error) {
         console.error('Error al registrar pieza:', error);
-        let mensaje = 'Error al registrar la pieza.';
-
-        if (error.response?.data?.detail === 'Número de serie ya registrado') {
-            mensaje = '¡Error! Este número de serie ya está registrado.';
+        let mensaje = 'Error al registrar la entrada.';
+        
+        if (error.response?.data?.detail === 'El número de serie ya está registrado') {
+            mensaje = '¡Error! Este número de serie ya está registrado en el inventario.';
         } else if (error.response?.data?.detail) {
             mensaje = error.response.data.detail;
         }
-
+        
         mostrarResultado(mensaje, 'error');
     }
 }
@@ -669,6 +707,89 @@ PRINT 1
 
     if (window.electronAPI && window.electronAPI.imprimirTSPL) {
         window.electronAPI.imprimirTSPL(tspl);
+    }
+}
+
+function imprimirEtiquetaMXD({ numeroParte, numeroSerie, nombreProducto = '', modelo = '', ubicacion = '' }) {
+    const nombre = (nombreProducto || '').toUpperCase().substring(0, 32);
+    const modeloTexto = modelo ? `MODELO: ${modelo}`.toUpperCase().substring(0, 32) : '';
+    const ubicacionTexto = ubicacion ? `UBIC: ${ubicacion}`.toUpperCase().substring(0, 32) : '';
+
+    const tspl = `
+SIZE 60 mm,30 mm
+GAP 3 mm,0
+DIRECTION 1
+REFERENCE 0,0
+CLS
+
+TEXT 30,18,"1",0,1,1,"MXD"
+TEXT 30,42,"1",0,1,1,"${nombre}"
+TEXT 30,66,"1",0,1,1,"NP: ${numeroParte}"
+TEXT 30,90,"1",0,1,1,"NS: ${numeroSerie}"
+${modeloTexto ? `TEXT 30,114,"1",0,1,1,"${modeloTexto}"` : ''}
+${ubicacionTexto ? `TEXT 30,138,"1",0,1,1,"${ubicacionTexto}"` : ''}
+
+BARCODE 30,165,"128",55,0,0,2,2,"${numeroSerie}"
+
+PRINT 1
+`;
+
+    if (window.electronAPI && window.electronAPI.imprimirTSPL) {
+        window.electronAPI.imprimirTSPL(tspl);
+    }
+}
+
+
+async function cargarCatalogosFormularios() {
+    try {
+        const [estadosRes, ubicacionesRes, productosRes] = await Promise.all([
+            axios.get(`${API_URL}/catalogos/estados`),
+            axios.get(`${API_URL}/catalogos/ubicaciones`),
+            axios.get(`${API_URL}/productos`)
+        ]);
+
+        const estados = estadosRes.data || [];
+        const ubicaciones = ubicacionesRes.data || [];
+        const productos = productosRes.data || [];
+
+        let opcionesEstados = '<option value="">Selecciona un estado...</option>';
+        estados.forEach(e => {
+            opcionesEstados += `<option value="${e.id_estado}">${e.nombre}</option>`;
+        });
+
+        if ($('registro-estado')) $('registro-estado').innerHTML = opcionesEstados;
+        if ($('actualizar-estado')) $('actualizar-estado').innerHTML = opcionesEstados;
+
+        let opcionesUbicaciones = '<option value="">Selecciona una ubicación...</option>';
+        ubicaciones.forEach(u => {
+            opcionesUbicaciones += `<option value="${u.id_ubicacion}">${u.codigo} - ${u.descripcion || u.anaquel || ''}</option>`;
+        });
+
+        if ($('registro-id-ubicacion')) $('registro-id-ubicacion').innerHTML = opcionesUbicaciones;
+        if ($('actualizar-id-ubicacion')) $('actualizar-id-ubicacion').innerHTML = opcionesUbicaciones;
+
+        let opcionesProductos = '<option value="">Selecciona un producto...</option>';
+        productos.forEach(p => {
+            opcionesProductos += `<option value="${p.id_producto}" data-numero-parte="${p.codigo_original}" data-nombre="${p.nombre}">${p.codigo_original} - ${p.nombre}</option>`;
+        });
+
+        const selectProducto = $('registro-id-producto');
+        if (selectProducto) {
+            selectProducto.innerHTML = opcionesProductos;
+            selectProducto.addEventListener('change', (e) => {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    setValue('registro-numero-parte', selectedOption.getAttribute('data-numero-parte'));
+                    setValue('registro-producto-nombre', selectedOption.getAttribute('data-nombre'));
+                } else {
+                    setValue('registro-numero-parte', '');
+                    setValue('registro-producto-nombre', '');
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Error al cargar catálogos de formularios:', error);
     }
 }
 
@@ -719,7 +840,8 @@ function cargarOpcionesFiltrosInventario() {
         { id: 'filtro-producto', label: 'Todos los productos', extractor: obtenerProducto },
         { id: 'filtro-marca', label: 'Todas las marcas', extractor: obtenerMarca },
         { id: 'filtro-categoria', label: 'Todas las categorías', extractor: obtenerCategoria },
-        { id: 'filtro-modelo', label: 'Todos los modelos', extractor: obtenerModelo }
+        { id: 'filtro-modelo', label: 'Todos los modelos', extractor: obtenerModelo },
+        { id: 'filtro-estado', label: 'Todos los estados', extractor: obtenerEstado }
     ];
 
     filtros.forEach(filtro => {
@@ -815,18 +937,21 @@ function renderizarTabla() {
         row.innerHTML = `
             <td>${safeText(id)}</td>
             <td>${safeText(obtenerMarca(pieza))}</td>
-            <td>${safeText(obtenerCategoria(pieza))}</td>
             <td>${safeText(obtenerModelo(pieza))}</td>
-            <td>${safeText(obtenerProducto(pieza))}</td>
+            <td>${safeText(obtenerCategoria(pieza))}</td>
+            <td>
+                <div style="font-weight:700;">${safeText(obtenerProducto(pieza))}</div>
+                <div style="font-size:12px; color:#6b7280; margin-top:3px;">NP: ${safeText(obtenerNumeroParte(pieza))}</div>
+            </td>
             <td>${safeText(pieza.numero_serie)}</td>
-            <td><span class="${obtenerClaseEstado(estado)}">${safeText(estado)}</span></td>
-            <td>${safeText(obtenerUbicacion(pieza))}</td>
+            <td>${formatearFechaCorta(obtenerFechaEntrada(pieza))}</td>
+            <td>${formatearFechaCorta(obtenerFechaSalida(pieza))}</td>
             <td>${valorSiNo(pieza.vendido)}</td>
             <td>${valorSiNo(pieza.prestamo)}</td>
             <td>${safeText(pieza.destinatario)}</td>
+            <td><span class="status-pill ${obtenerClaseEstado(estado)}">${safeText(estado)}</span></td>
+            <td>${safeText(obtenerUbicacion(pieza))}</td>
             <td>${valorSiNo(pieza.para_venta)}</td>
-            <td>${formatearFechaCorta(obtenerFechaEntrada(pieza))}</td>
-            <td>${formatearFechaCorta(obtenerFechaSalida(pieza))}</td>
             <td>
                 <button class="btn-historial" onclick="verHistorial(${id})" title="Ver historial">
                     Ver
@@ -1562,11 +1687,11 @@ function mostrarNotificacion(mensaje, tipo) {
    LISTENERS
 ========================= */
 document.addEventListener('DOMContentLoaded', function () {
-    const temaGuardado = localStorage.getItem('theme') || (localStorage.getItem('modoOscuro') === '1' ? 'dark' : 'light');
-    aplicarTema(temaGuardado);
+    aplicarTema();
 
     mostrarNombreUsuario();
     iniciarMonitoreoInactividad();
+    cargarCatalogosFormularios();
 
     if ($('registro-section')) {
         showSection('registro');
@@ -1575,10 +1700,6 @@ document.addEventListener('DOMContentLoaded', function () {
     cargarAlertasStock();
     cargarDronesCheckbox();
 
-    const btnTheme = $('toggle-theme') || document.querySelector('.toggle-theme');
-    if (btnTheme) {
-        btnTheme.addEventListener('click', toggleDarkMode);
-    }
 
     document.addEventListener('input', function (e) {
         const ids = [
@@ -1610,6 +1731,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (ids.includes(e.target.id)) aplicarFiltros();
     });
+
+    $('actualizar-estado')?.addEventListener('change', manejarCambioEstadoActualizar);
+
 
     $('codigoEscaneado')?.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') buscarCodigo();

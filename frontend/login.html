@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - OTech Inventario</title>
+    <title>Login - Inventario OTech / MXD</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Content Security Policy kept if needed -->
 </head>
 <body class="login-wrapper">
 
     <div class="login-glass-card">
-        <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo">
-        <h2 style="margin-bottom: 24px; color: #f8fafc;">Iniciar Sesión</h2>
+        <h2 style="margin-bottom: 32px;">Inventario OTech / MXD</h2>
         
         <div class="form-group">
             <input type="text" id="username" placeholder="Usuario" autofocus>
@@ -21,7 +19,7 @@
         </div>
         
         <button onclick="login()">Entrar</button>
-        <p id="error" style="color: #fca5a5; text-align: center; margin-top: 16px; font-weight: 500;"></p>
+        <p id="error" style="color: var(--danger); text-align: center; margin-top: 16px; font-weight: 500;"></p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -60,7 +58,6 @@
             }
         }
         
-        // Add enter key listener
         document.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 login();
