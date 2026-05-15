@@ -6,112 +6,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' ; connect-src 'self' http://localhost:8000;">
     <title>Editar Usuario - OTech</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-    <style>
-        :root {
-            --primary: #163f97;
-            --primary-dark: #1d4ed8;
-            --success: #10b981;
-            --danger: #ef4444;
-            --gray-100: #f9fafb;
-            --gray-200: #e5e7eb;
-            --gray-700: #374151;
-            --gray-900: #111827;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f7fa;
-            color: var(--gray-900);
-            padding: 0;
-            margin: 0;
-        }
-        .navbar {
-            background: white;
-            padding: 0 40px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 24px;
-            color: var(--primary);
-            text-decoration: none;
-        }
-        .container {
-            max-width: 600px;
-            margin: 80px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 32px;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 24px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--gray-700);
-        }
-        input, select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid var(--gray-200);
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            background-color: #f0f7ff;
-        }
-        button {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            margin-top: 12px;
-        }
-        button:hover {
-            background-color: var(--primary-dark);
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <nav class="navbar">
@@ -122,30 +17,36 @@
     </nav>
 
     <div class="container">
-        <h1>Editar Usuario</h1>
+        <h1 style="margin-bottom: 40px;">Editar Usuario</h1>
         
-        <div class="form-group">
-            <label for="nombre-completo">Nombre completo</label>
-            <input type="text" id="nombre-completo" placeholder="Ej: Juan Pérez" required>
-        </div>
-        <div class="form-group">
-            <label for="nombre-usuario">Nombre de usuario</label>
-            <input type="text" id="nombre-usuario" placeholder="Ej: juanp" required>
-        </div>
-        <div class="form-group">
-            <label for="email">Correo electrónico</label>
-            <input type="email" id="email" placeholder="Ej: juan@otech.com" required>
-        </div>
-        <div class="form-group">
-            <label for="rol">Rol</label>
-            <select id="rol" required style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
-                <option value="Operario">Operario</option>
-                <option value="Admin">Administrador</option>
-            </select>
+        <div class="grid-form">
+            <div class="form-group">
+                <label for="nombre-completo">Nombre completo</label>
+                <input type="text" id="nombre-completo" placeholder="Ej: Juan Pérez" required>
+            </div>
+            <div class="form-group">
+                <label for="nombre-usuario">Nombre de usuario</label>
+                <input type="text" id="nombre-usuario" placeholder="Ej: juanp" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Correo electrónico</label>
+                <input type="email" id="email" placeholder="Ej: juan@otech.com" required>
+            </div>
+            <div class="form-group">
+                <label for="rol">Rol</label>
+                <select id="rol" required style="width: 100%; border: 1px solid var(--border-soft); border-radius: 12px; font-size: 16px; background: var(--bg-input); color: var(--text-main); height: 50px;">
+                    <option value="Operario" style="background:#020617; color:#fff;">Operario</option>
+                    <option value="Admin" style="background:#020617; color:#fff;">Administrador</option>
+                </select>
+            </div>
         </div>
 
-        <button onclick="guardarEdicion()">Guardar Cambios</button>
-        <a href="index.html" class="back-link">← Volver al Inventario</a>
+        <div class="full-width" style="margin-top: 20px;">
+            <button onclick="guardarEdicion()" style="max-width: 300px; margin: 0 auto; display: block;">Guardar Cambios</button>
+            <div style="text-align: center;">
+                <a href="index.html" class="back-link">← Volver al Inventario</a>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -223,5 +124,6 @@
         // Inicializar
         cargarUsuario();
     </script>
+    <script src="theme.js"></script>
 </body>
 </html>

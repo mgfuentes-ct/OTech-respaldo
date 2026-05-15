@@ -1,28 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Login - OTech</title>
-    <style>
-        body { font-family: Arial; background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 400px; }
-        input { width: 93%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
-        button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - OTech Inventario</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Content Security Policy kept if needed -->
 </head>
-<body>
-    <div class="login-box">
-        <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo" style="display: block; margin: 0 auto 20px auto; width: 100px;">
-        <h2 style="text-align: center;">Iniciar Sesión</h2>
-        <input type="text" id="username" placeholder="Usuario">
-        <input type="password" id="password" placeholder="Contraseña">
+<body class="login-wrapper">
+
+    <div class="login-glass-card">
+        <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo">
+        <h2 style="margin-bottom: 24px; color: #f8fafc;">Iniciar Sesión</h2>
+        
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Usuario" autofocus>
+        </div>
+        <div class="form-group">
+            <input type="password" id="password" placeholder="Contraseña">
+        </div>
+        
         <button onclick="login()">Entrar</button>
-        <p id="error" style="color: red; text-align: center; margin-top: 10px;"></p>
+        <p id="error" style="color: #fca5a5; text-align: center; margin-top: 16px; font-weight: 500;"></p>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('error');
+
+            const btn = document.querySelector('button');
+            const originalText = btn.textContent;
+            btn.textContent = 'Verificando...';
+            btn.disabled = true;
 
             try {
                 const response = await axios.post('http://localhost:8000/login', new URLSearchParams({
@@ -35,10 +47,26 @@
                 localStorage.setItem('usuario', JSON.stringify(response.data));
                 window.location.href = 'index.html';
             } catch (error) {
+                btn.textContent = originalText;
+                btn.disabled = false;
                 errorDiv.textContent = "Usuario o contraseña incorrectos";
+                
+                // Shake effect on error
+                const card = document.querySelector('.login-glass-card');
+                card.style.transform = 'translateY(0) translateX(-10px)';
+                setTimeout(() => card.style.transform = 'translateY(0) translateX(10px)', 100);
+                setTimeout(() => card.style.transform = 'translateY(0) translateX(-10px)', 200);
+                setTimeout(() => card.style.transform = 'translateY(0) translateX(0)', 300);
             }
         }
+        
+        // Add enter key listener
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="theme.js"></script>
 </body>
 </html>

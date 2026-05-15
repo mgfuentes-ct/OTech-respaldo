@@ -1,217 +1,399 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:8000;">
-    <title>Crear Usuario - OTech</title>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:8000;">
+    <title>Crear Producto - OTech MXD</title>
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
     <style>
         :root {
             --primary: #163f97;
-            --primary-dark: #1d4ed8;
+            --primary-dark: #10275d;
             --success: #10b981;
             --danger: #ef4444;
-            --gray-100: #f9fafb;
-            --gray-200: #e5e7eb;
-            --gray-700: #374151;
-            --gray-900: #111827;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --input-bg: #ffffff;
         }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f5f7fa;
-            color: var(--gray-900);
-            padding: 0;
-            margin: 0;
+            background: var(--bg);
+            color: var(--text);
         }
+
         .navbar {
+            height: 70px;
             background: white;
             padding: 0 40px;
-            height: 70px;
             display: flex;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
+
         .navbar-brand {
-            font-weight: 700;
             font-size: 24px;
+            font-weight: 700;
             color: var(--primary);
             text-decoration: none;
         }
+
         .container {
-            max-width: 600px;
-            margin: 80px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            max-width: 820px;
+            margin: 40px auto;
+            padding: 36px;
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
         }
+
         h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 32px;
             text-align: center;
+            font-size: 28px;
+            margin-bottom: 8px;
         }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
             font-size: 14px;
-            color: var(--gray-700);
+            font-weight: 600;
+            color: #374151;
         }
-        input {
+
+        input,
+        select,
+        textarea {
             width: 100%;
             padding: 14px 16px;
-            border: 2px solid var(--gray-200);
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.2s ease;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
             font-family: inherit;
+            background: var(--input-bg);
+            transition: all 0.2s ease;
         }
-        input:focus {
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
             outline: none;
             border-color: var(--primary);
-            background-color: #f0f7ff;
+            background: #f0f7ff;
         }
-        button {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            margin-top: 12px;
-        }
-        button:hover {
-            background-color: var(--primary-dark);
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .back-link:hover {
-            text-decoration: underline;
+
+        .compatibles-box {
+            padding: 18px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 14px;
         }
 
         .checkbox-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 12px;
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         .checkbox-card {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 10px 12px;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: white;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             transition: all 0.2s ease;
-            background: #fff;
+            font-weight: 600;
+            color: #374151;
         }
 
         .checkbox-card:hover {
-            border-color: #6366f1;
-        }
-
-        .checkbox-card input {
-            accent-color: #6366f1;
-            cursor: pointer;
+            border-color: var(--primary);
+            background: #f0f7ff;
         }
 
         .checkbox-card.checked {
-            border-color: #6366f1;
+            border-color: var(--primary);
             background: #eef2ff;
+            color: var(--primary);
         }
 
+        .checkbox-card input {
+            width: auto;
+            accent-color: var(--primary);
+        }
 
+        .actions {
+            display: flex;
+            gap: 14px;
+            margin-top: 28px;
+        }
 
+        button,
+        .back-link {
+            width: 100%;
+            padding: 15px 18px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            background: #eef2ff;
+            color: var(--primary);
+        }
+
+        .back-link:hover {
+            background: #dbeafe;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        @media (max-width: 720px) {
+            .container {
+                margin: 20px;
+                padding: 24px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo" style="display: block; margin: 0 auto 20px auto; width: 60px;">
-            <a href="index.html" class="navbar-brand">OTech inventario</a>
+            <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo" style="width: 58px;">
+            <a href="index.html" class="navbar-brand">OTech MXD Inventario</a>
         </div>
     </nav>
 
-    <div class="container">
+    <main class="container">
         <h1>Crear Nuevo Producto</h1>
-        
-        <div class="form-group">
-            <label for="codigo-producto">Codigo del producto</label>
-            <input type="text" id="codigo-producto" placeholder="Ej: 123456" required>
-        </div>
-        <div class="form-group">
-            <label for="nombre-producto">Nombre del producto</label>
-            <input type="text" id="nombre-producto" placeholder="Ej: Bateria inteligente" required>
-        </div>
-        <div class="form-group">
-            <label for="descripcion-producto">Descripción del producto</label>
-            <input type="text" id="descripcion-producto" placeholder="Ej: Bateria inteligente T25P DB800" required>
-        </div>
-        <div class="form-group">
-            <label>Drones compatibles</label>
+        <p class="subtitle">Registra productos por marca, tipo y compatibilidad con modelos.</p>
 
-            <div id="drones-checkbox" class="drones-grid">
-                <!-- Aquí se cargan los drones -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="codigo-producto">Código / Número de parte *</label>
+                <input type="text" id="codigo-producto" placeholder="Ej: 982746220083">
+            </div>
+
+            <div class="form-group">
+                <label for="nombre-producto">Nombre del producto *</label>
+                <input type="text" id="nombre-producto" placeholder="Ej: Batería inteligente">
+            </div>
+
+            <div class="form-group">
+                <label for="marca-producto">Marca *</label>
+                <select id="marca-producto">
+                    <option value="">Cargando marcas...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tipo-producto">Tipo de producto *</label>
+                <select id="tipo-producto">
+                    <option value="">Cargando tipos...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="modelo-base">Modelo base</label>
+                <select id="modelo-base">
+                    <option value="">Selecciona una marca primero</option>
+                </select>
+                <p class="help-text">Úsalo si el producto pertenece principalmente a un modelo.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="stock-minimo">Stock mínimo *</label>
+                <input type="number" id="stock-minimo" min="0" placeholder="Ej: 10">
+            </div>
+
+            <div class="form-group full">
+                <label for="descripcion-producto">Descripción</label>
+                <textarea id="descripcion-producto"
+                    placeholder="Ej: Batería compatible con drones MXD700 y MXD800"></textarea>
+            </div>
+
+            <div class="form-group full">
+                <div class="compatibles-box">
+                    <label>Modelos compatibles</label>
+                    <p class="help-text">Selecciona todos los modelos a los que les sirve este producto.</p>
+                    <div id="modelos-compatibles" class="checkbox-grid">
+                        <p class="help-text">Selecciona una marca para cargar modelos.</p>
+                    </div>
+                </div>
             </div>
         </div>
-            
 
-        <div class="form-group">
-            <label for="stock-minimo">Stock minimo</label>
-            <input type="number" id="stock-minimo" placeholder="Ej: 10" required>
+        <div class="actions">
+            <a href="index.html" class="back-link">← Volver</a>
+            <button id="btn-guardar" onclick="registrarNuevoProducto()">Guardar Producto</button>
         </div>
+    </main>
 
-        <button onclick="registrarNuevoProducto()">Guardar Producto</button>
-        <a href="index.html" class="back-link">← Volver al Inventario</a>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         const API_URL = 'http://localhost:8000';
 
-        async function cargarDrones() {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await cargarMarcas();
+            await cargarTiposProducto();
+
+            document.getElementById('marca-producto').addEventListener('change', async () => {
+                await cargarModelosPorMarca();
+            });
+        });
+
+        async function cargarMarcas() {
+            const select = document.getElementById('marca-producto');
+
             try {
-                const res = await axios.get(`${API_URL}/admin/listar_drones`);
-                const contenedor = document.getElementById('drones-checkbox');
+                const res = await axios.get(`${API_URL}/catalogos/marcas`);
+                select.innerHTML = '<option value="">Selecciona una marca</option>';
 
-                if (!contenedor) return;
+                res.data.forEach(marca => {
+                    const option = document.createElement('option');
+                    option.value = marca.id_marca;
+                    option.textContent = marca.nombre;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+                select.innerHTML = '<option value="">Error al cargar marcas</option>';
+            }
+        }
 
-                contenedor.innerHTML = '';
+        async function cargarTiposProducto() {
+            const select = document.getElementById('tipo-producto');
 
-                res.data.forEach(dron => {
+            try {
+                const res = await axios.get(`${API_URL}/catalogos/tipos_producto`);
+                select.innerHTML = '<option value="">Selecciona un tipo</option>';
+
+                res.data.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.id_tipo_producto;
+                    option.textContent = tipo.nombre;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+                select.innerHTML = '<option value="">Error al cargar tipos</option>';
+            }
+        }
+
+        async function cargarModelosPorMarca() {
+            const idMarca = document.getElementById('marca-producto').value;
+            const modeloBaseSelect = document.getElementById('modelo-base');
+            const compatiblesDiv = document.getElementById('modelos-compatibles');
+
+            modeloBaseSelect.innerHTML = '<option value="">Selecciona modelo base</option>';
+            compatiblesDiv.innerHTML = '';
+
+            if (!idMarca) {
+                modeloBaseSelect.innerHTML = '<option value="">Selecciona una marca primero</option>';
+                compatiblesDiv.innerHTML = '<p class="help-text">Selecciona una marca para cargar modelos.</p>';
+                return;
+            }
+
+            try {
+                const res = await axios.get(`${API_URL}/catalogos/modelos`, {
+                    params: { id_marca: idMarca }
+                });
+
+                if (res.data.length === 0) {
+                    modeloBaseSelect.innerHTML = '<option value="">No hay modelos registrados</option>';
+                    compatiblesDiv.innerHTML = '<p class="help-text">No hay modelos registrados para esta marca.</p>';
+                    return;
+                }
+
+                res.data.forEach(modelo => {
+                    const option = document.createElement('option');
+                    option.value = modelo.id_modelo;
+                    option.textContent = modelo.nombre;
+                    modeloBaseSelect.appendChild(option);
+
                     const label = document.createElement('label');
                     label.className = 'checkbox-card';
 
                     label.innerHTML = `
-                        <input type="checkbox" value="${dron.id}">
-                        <span>${dron.nombre}</span>
+                        <input type="checkbox" value="${modelo.id_modelo}">
+                        <span>${modelo.nombre}</span>
                     `;
 
                     const checkbox = label.querySelector('input');
@@ -219,73 +401,89 @@
                         label.classList.toggle('checked', checkbox.checked);
                     });
 
-                    contenedor.appendChild(label);
+                    compatiblesDiv.appendChild(label);
                 });
-            } catch (err) {
-                console.error("Error al cargar drones:", err);
+            } catch (error) {
+                console.error(error);
+                modeloBaseSelect.innerHTML = '<option value="">Error al cargar modelos</option>';
+                compatiblesDiv.innerHTML = '<p class="help-text">Error al cargar modelos.</p>';
             }
         }
-
-
-        cargarDrones();
 
         async function registrarNuevoProducto() {
-        const codigo = document.getElementById('codigo-producto').value.trim();
-        const nombre = document.getElementById('nombre-producto').value.trim();
-        const descripcion = document.getElementById('descripcion-producto').value.trim();
-        const stockMinimo = document.getElementById('stock-minimo').value.trim();
+            const codigo = document.getElementById('codigo-producto').value.trim();
+            const nombre = document.getElementById('nombre-producto').value.trim();
+            const descripcion = document.getElementById('descripcion-producto').value.trim();
+            const idMarca = document.getElementById('marca-producto').value;
+            const idTipoProducto = document.getElementById('tipo-producto').value;
+            const idModeloBase = document.getElementById('modelo-base').value;
+            const stockMinimo = document.getElementById('stock-minimo').value.trim();
 
-        const dronesSeleccionados = Array.from(
-            document.querySelectorAll('#drones-checkbox input:checked')
-        ).map(cb => parseInt(cb.value));
+            const modelosCompatibles = Array.from(
+                document.querySelectorAll('#modelos-compatibles input[type="checkbox"]:checked')
+            ).map(cb => parseInt(cb.value));
 
-        // Validaciones
-        if (!codigo || !nombre || !descripcion || dronesSeleccionados.length === 0 || !stockMinimo) {
-            Swal.fire('Error', 'Por favor, completa todos los campos.', 'error');
-            return;
-        }
-
-        if (parseInt(stockMinimo) < 0) {
-            Swal.fire('Error', 'El stock mínimo no puede ser negativo.', 'error');
-            return;
-        }
-
-        // DEBUG (esto te ayuda muchísimo)
-        console.log({
-            codigo_original: codigo,
-            nombre,
-            descripcion,
-            stock_minimo: parseInt(stockMinimo),
-            drones: dronesSeleccionados
-        });
-
-        try {
-            const response = await axios.post(`${API_URL}/admin/crear_producto`, {
-                codigo_original: codigo,
-                nombre: nombre,
-                descripcion: descripcion,
-                stock_minimo: parseInt(stockMinimo),
-                drones: dronesSeleccionados
-            });
-
-            Swal.fire({
-                title: '¡Éxito!',
-                text: response.data.mensaje,
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            }).then(() => {
-                window.location.href = 'index.html';
-            });
-
-        } catch (error) {
-            console.error(error);
-            let mensaje = 'Error al registrar producto.';
-            if (error.response?.data?.detail) {
-                mensaje = error.response.data.detail;
+            if (!codigo || !nombre || !idMarca || !idTipoProducto || stockMinimo === '') {
+                Swal.fire('Campos incompletos', 'Completa los campos obligatorios.', 'warning');
+                return;
             }
-            Swal.fire('Error', mensaje, 'error');
+
+            if (parseInt(stockMinimo) < 0) {
+                Swal.fire('Dato inválido', 'El stock mínimo no puede ser negativo.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btn-guardar');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            try {
+                const response = await axios.post(`${API_URL}/admin/crear_producto`, {
+                    codigo_original: codigo,
+                    nombre: nombre,
+                    descripcion: descripcion || null,
+                    stock_minimo: parseInt(stockMinimo),
+                    id_marca: parseInt(idMarca),
+                    id_tipo_producto: parseInt(idTipoProducto),
+                    id_modelo: idModeloBase ? parseInt(idModeloBase) : null,
+                    modelos_compatibles: modelosCompatibles
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Producto registrado!',
+                    text: response.data.mensaje,
+                    confirmButtonColor: '#163f97'
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+
+            } catch (error) {
+                console.error(error);
+
+                let mensaje = 'No se pudo registrar el producto.';
+
+                if (error.response?.data?.detail) {
+                    if (Array.isArray(error.response.data.detail)) {
+                        mensaje = error.response.data.detail.map(e => e.msg).join(', ');
+                    } else {
+                        mensaje = error.response.data.detail;
+                    }
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: mensaje,
+                    confirmButtonColor: '#ef4444'
+                });
+
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Guardar Producto';
+            }
         }
-    }
     </script>
 </body>
+
 </html>

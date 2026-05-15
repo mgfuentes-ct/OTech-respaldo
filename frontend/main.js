@@ -58,7 +58,7 @@ ipcMain.on('imprimir-contenido', (event, htmlContent) => {
 });
 
 /* ===============================
-   IMPRESIÓN TSPL (LA BUENA)
+      IMPRESIÓN TSPL (LA BUENA)
    =============================== */
 ipcMain.on('imprimir-tspl', (event, tspl) => {
   const tmpFile = path.join(os.tmpdir(), `label_${Date.now()}.txt`);

@@ -6,112 +6,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:8000;">
     <title>Crear Usuario - OTech</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-    <style>
-        :root {
-            --primary: #163f97;
-            --primary-dark: #1d4ed8;
-            --success: #10b981;
-            --danger: #ef4444;
-            --gray-100: #f9fafb;
-            --gray-200: #e5e7eb;
-            --gray-700: #374151;
-            --gray-900: #111827;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f7fa;
-            color: var(--gray-900);
-            padding: 0;
-            margin: 0;
-        }
-        .navbar {
-            background: white;
-            padding: 0 40px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 24px;
-            color: var(--primary);
-            text-decoration: none;
-        }
-        .container {
-            max-width: 600px;
-            margin: 80px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 32px;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 24px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--gray-700);
-        }
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid var(--gray-200);
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background-color: #f0f7ff;
-        }
-        button {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            margin-top: 12px;
-        }
-        button:hover {
-            background-color: var(--primary-dark);
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <nav class="navbar">
@@ -122,31 +17,42 @@
     </nav>
 
     <div class="container">
-        <h1>Crear Nuevo Usuario</h1>
+        <h1 style="margin-bottom: 40px;">Crear Nuevo Usuario</h1>
         
-        <div class="form-group">
-            <label for="admin-nombre">Nombre completo</label>
-            <input type="text" id="admin-nombre" placeholder="Ej: Juan Pérez" required>
-        </div>
-        <div class="form-group">
-            <label for="admin-usuario">Nombre de usuario</label>
-            <input type="text" id="admin-usuario" placeholder="Ej: juanp" required>
-        </div>
-        <div class="form-group">
-            <label for="admin-email">Correo electrónico</label>
-            <input type="email" id="admin-email" placeholder="Ej: juan@otech.com" required>
-        </div>
-        <div class="form-group">
-            <label for="admin-password">Contraseña</label>
-            <input type="password" id="admin-password" placeholder="Mínimo 6 caracteres" required>
-        </div>
-        <div class="form-group">
-            <label for="admin-password-confirm">Confirmar contraseña</label>
-            <input type="password" id="admin-password-confirm" placeholder="Repite la contraseña" required>
+        <div class="grid-form">
+            <div class="form-group">
+                <label for="admin-nombre">Nombre completo</label>
+                <input type="text" id="admin-nombre" placeholder="Ej: Juan Pérez" required>
+                <small class="validation-msg" id="error-nombre">Ingresa el nombre completo</small>
+            </div>
+            <div class="form-group">
+                <label for="admin-usuario">Nombre de usuario</label>
+                <input type="text" id="admin-usuario" placeholder="Ej: juanp" required>
+                <small class="validation-msg" id="error-usuario">Ingresa el nombre del usuario</small>
+            </div>
+            <div class="form-group full-width">
+                <label for="admin-email">Correo electrónico</label>
+                <input type="email" id="admin-email" placeholder="Ej: juan@otech.com" required>
+                <small class="validation-msg" id="error-email">Formato de correo inválido</small>
+            </div>
+            <div class="form-group">
+                <label for="admin-password">Contraseña</label>
+                <input type="password" id="admin-password" placeholder="Mínimo 6 caracteres" required>
+                <small class="validation-msg" id="error-password">La contraseña debe tener al menos 6 caracteres</small>
+            </div>
+            <div class="form-group">
+                <label for="admin-password-confirm">Confirmar contraseña</label>
+                <input type="password" id="admin-password-confirm" placeholder="Repite la contraseña" required>
+                <small class="validation-msg" id="error-password-confirm">Las contraseñas no coinciden</small>
+            </div>
         </div>
 
-        <button onclick="registrarNuevoUsuario()">Guardar Usuario</button>
-        <a href="index.html" class="back-link">← Volver al Inventario</a>
+        <div class="full-width" style="margin-top: 20px;">
+            <button onclick="registrarNuevoUsuario()" style="max-width: 300px; margin: 0 auto; display: block;">Guardar Usuario</button>
+            <div style="text-align: center;">
+                <a href="index.html" class="back-link">← Volver al Inventario</a>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -155,6 +61,38 @@
     <script>
         const API_URL = 'http://localhost:8000';
 
+        // Lógica de validación instantánea
+        function checkInput(inputId, errorId, condition) {
+            const input = document.getElementById(inputId);
+            const errorLabel = document.getElementById(errorId);
+            input.addEventListener('input', () => {
+                if (!condition(input.value)) {
+                    input.classList.add('invalid');
+                } else {
+                    input.classList.remove('invalid');
+                }
+            });
+        }
+
+        checkInput('admin-nombre', 'error-nombre', v => v.trim().length > 0);
+        checkInput('admin-usuario', 'error-usuario', v => v.trim().length > 0);
+        checkInput('admin-email', 'error-email', v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()));
+        checkInput('admin-password', 'error-password', v => v.length >= 6);
+        checkInput('admin-password-confirm', 'error-password-confirm', v => v === document.getElementById('admin-password').value);
+
+        // Re-checkear confirm pass cuando el pass original cambia
+        document.getElementById('admin-password').addEventListener('input', () => {
+            const conf = document.getElementById('admin-password-confirm');
+            if (conf.value) {
+                if (conf.value !== document.getElementById('admin-password').value) {
+                    conf.classList.add('invalid');
+                } else {
+                    conf.classList.remove('invalid');
+                }
+            }
+        });
+
+
         async function registrarNuevoUsuario() {
             const nombreCompleto = document.getElementById('admin-nombre').value.trim();
             const nombreUsuario = document.getElementById('admin-usuario').value.trim();
@@ -162,19 +100,21 @@
             const password = document.getElementById('admin-password').value.trim();
             const passwordConfirm = document.getElementById('admin-password-confirm').value.trim();
 
-            // Validaciones
-            if (!nombreCompleto || !nombreUsuario || !email || !password || !passwordConfirm) {
-                Swal.fire('Error', 'Por favor, completa todos los campos.', 'error');
-                return;
-            }
+            const inputs = ['admin-nombre', 'admin-usuario', 'admin-email', 'admin-password', 'admin-password-confirm'];
+            let hasErrors = false;
+            
+            // Simular evento input en todos para forzar validacion manual si intentan hacer submit en vacio
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                el.dispatchEvent(new Event('input'));
+                if (el.classList.contains('invalid') || !el.value.trim()) { 
+                    if (!el.value.trim()) el.classList.add('invalid');
+                    hasErrors = true; 
+                }
+            });
 
-            if (password.length < 6) {
-                Swal.fire('Error', 'La contraseña debe tener al menos 6 caracteres.', 'error');
-                return;
-            }
-
-            if (password !== passwordConfirm) {
-                Swal.fire('Error', 'Las contraseñas no coinciden.', 'error');
+            if (hasErrors) {
+                Swal.fire({icon: 'warning', title: 'Campos incompletos', text: 'Corrige los errores marcados en rojo.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000});
                 return;
             }
 
@@ -204,5 +144,6 @@
             }
         }
     </script>
+    <script src="theme.js"></script>
 </body>
 </html>

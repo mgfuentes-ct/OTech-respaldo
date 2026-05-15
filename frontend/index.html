@@ -1,22 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: http://localhost:8000; connect-src 'self' http://localhost:8000;">    
-    <title>OTech Inventario</title>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: http://localhost:8000; connect-src 'self' http://localhost:8000;">
+    <title>OTech MXD Inventario</title>
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         :root {
             --primary: #163f97;
-            --primary-dark: #1d4ed8;
+            --primary-dark: #10275d;
             --success: #10b981;
             --danger: #ef4444;
-            --gray-100: #f9fafb;
-            --gray-200: #e5e7eb;
-            --gray-700: #374151;
-            --gray-900: #111827;
+            --warning: #f59e0b;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --soft: #f8fafc;
         }
 
         * {
@@ -27,283 +34,115 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f5f7fa;
-            color: var(--gray-900);
-            padding: 0;
-            margin: 0;
+            background: var(--bg);
+            color: var(--text);
         }
 
         .navbar {
             background: white;
-            padding: 0 40px;
-            height: 70px;
+            height: 72px;
+            padding: 0 34px;
             display: flex;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            gap: 24px;
+            box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 245px;
+        }
+
+        .brand img {
+            width: 58px;
+        }
+
         .navbar-brand {
             font-weight: 700;
-            font-size: 24px;
+            font-size: 22px;
             color: var(--primary);
             text-decoration: none;
         }
 
         .nav-tabs {
             display: flex;
-            gap: 2px;
-            margin-left: 40px;
+            gap: 8px;
+            flex: 1;
         }
 
         .nav-tab {
-            padding: 12px 24px;
-            background: white;
+            padding: 10px 18px;
             border: none;
-            font-weight: 600;
-            font-size: 16px;
+            background: transparent;
+            color: #64748b;
+            font-weight: 700;
+            border-radius: 10px;
             cursor: pointer;
-            border-radius: 8px 8px 0 0;
             transition: all 0.2s ease;
         }
 
         .nav-tab.active {
-            background: #F2F3F5;
+            background: #eef2ff;
             color: var(--primary);
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
         }
 
-        .nav-tab:hover:not(.active) {
-            background: var(--gray-200);
+        .nav-tab:hover {
+            background: #f1f5f9;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #usuario-nombre {
+            font-weight: 600;
+            color: #475569;
+            white-space: nowrap;
+        }
+
+        .btn-logout {
+            padding: 10px 14px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            background: #b91c1c;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 40px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            margin-top: 20px;
+            max-width: 1280px;
+            margin: 28px auto;
+            padding: 34px;
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
         }
 
         h1 {
+            text-align: center;
             font-size: 28px;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 32px;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        label {
-            display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--gray-700);
         }
 
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid var(--gray-200);
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background-color: #f0f7ff;
-        }
-
-        button {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--primary);
-            color: #97aedf;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            margin-top: 12px;
-        }
-
-        button:hover {
-            background-color: var(--primary-dark);
-        }
-
-        button:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        #camposProducto {
-            display: none;
-            margin-top: 24px;
-            padding: 24px;
-            background-color: #f0f7ff;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        #camposProducto h3 {
-            margin-bottom: 16px;
-            color: var(--primary);
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        #resultado {
-            display: none;
-            margin-top: 32px;
-            padding: 24px;
-            border-radius: 12px;
-            font-size: 16px;
-            animation: slideIn 0.4s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .success {
-            background-color: #ecfdf5;
-            
-            color: #065f46;
-        }
-
-        .error {
-            background-color: #fef2f2;
-            border: 2px solid #ef4444;
-            color: #991b1b;
-        }
-
-        .loading {
-            background-color: #f3f4f6;
-            color: #6b7280;
-        }
-
-        #resultado img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .barcode-container {
+        .subtitle {
             text-align: center;
-            padding: 16px;
-            background: white;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 16px;
+            color: var(--muted);
+            margin-bottom: 30px;
         }
 
-        /* Estilos para la tabla de inventario */
-        .table-container {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        thead {
-            background-color: #15347d;
-            background: #10275d;
-        }
-
-        th, td {
-            padding: 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--gray-200);
-        }
-
-        th {
-            background-color: var(--gray-100);
-            font-weight: 600;
-            color: var(--gray-700);
-            text-transform: uppercase;
-            font-size: 14px;
-            letter-spacing: 0.5px;
-        }
-
-        td {
-            font-size: 16px;
-        }
-
-        tr:hover {
-            background-color: #f9fafb;
-        }
-
-        .estado-Disponible {
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        .estado-Venta {
-            color: #ef4444;
-            font-weight: 600;
-        }
-
-        .estado-Reparacion {
-            color: #2e3fa2;
-            font-weight: 600;
-        }
-
-        .estado-Garantia {
-            color: #f59e0b;
-            font-weight: 600;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(0,0,0,.1);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        footer {
-            text-align: center;
-            margin: 60px auto 30px;
-            color: var(--gray-500);
-            font-size: 14px;
-            max-width: 1200px;
-            padding: 0 40px;
-        }
-
-        /* Mostrar registro por defecto */
-        #inventario-section {
+        .section {
             display: none;
         }
 
@@ -311,127 +150,244 @@
             display: block;
         }
 
-        .alerta-stock-item {
-            display: flex;
-            align-items: flex-start;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            margin: 8px 0;
-            border-left: 4px solid #d97706;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .alerta-stock-item[data-criticidad="alta"] {
-            border-left-color: #dc2626;
-            background-color: #fef2f2;
-        }
-
-        .alerta-icon {
-            font-size: 1.2em;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-
-        .alerta-contenido {
-            flex: 1;
-        }
-
-        .alerta-contenido strong {
-            color: #1e293b;
-            font-size: 15px;
-        }
-
-        .alerta-detalles {
-            display: flex;
-            gap: 12px;
-            margin-top: 4px;
-            font-size: 10px;
-            color: #64748b;
-        }
-
-        .faltante {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        /* ===== Flujo profesional por pasos ===== */
-        .flujo-estado {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .flujo-paso {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            border-radius: 8px;
-            background: #e5e7eb;
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .flujo-paso.activo {
-            background: #163f97;
-            color: white;
-        }
-
-        /* Tarjetas de acción */
-        .acciones {
+        .form-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
         }
 
-        .accion-card {
-            padding: 24px;
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 13px 15px;
+            border: 2px solid var(--border);
             border-radius: 12px;
-            border: 2px solid #e5e7eb;
-            cursor: pointer;
-            transition: all .2s ease;
+            font-size: 15px;
+            font-family: inherit;
             background: white;
+            transition: all 0.2s ease;
         }
 
-        .accion-card:hover {
-            border-color: #163f97;
+        textarea {
+            resize: vertical;
+            min-height: 82px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
             background: #f0f7ff;
         }
 
-        .accion-card h3 {
-            margin-bottom: 8px;
-            color: #163f97;
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 13px 18px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        /* Separación entre botón Buscar y bloques dinámicos */
-        .separador-flujo {
-            margin-top: 32px;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
 
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-soft {
+            background: #eef2ff;
+            color: var(--primary);
+        }
+
+        .btn-soft:hover {
+            background: #dbeafe;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .actions-row button {
+            flex: 1;
+        }
+
+        .scan-card {
+            background: var(--soft);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .scan-row {
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 14px;
+            align-items: end;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .estado-Disponible {
+            color: #047857;
+            background: #ecfdf5;
+        }
+
+        .estado-Venta,
+        .estado-Vendido {
+            color: #991b1b;
+            background: #fef2f2;
+        }
+
+        .estado-Reparacion {
+            color: #1d4ed8;
+            background: #eff6ff;
+        }
+
+        .estado-Garantia {
+            color: #92400e;
+            background: #fffbeb;
+        }
+
+        .estado-Proyecto {
+            color: #5b21b6;
+            background: #f5f3ff;
+        }
+
+        .estado-Servicio {
+            color: #155e75;
+            background: #ecfeff;
+        }
+
+        .estado-En-piezas {
+            color: #374151;
+            background: #f3f4f6;
+        }
+
+        .filters-card {
+            background: var(--soft);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 22px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            align-items: end;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1150px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .table-actions button {
+            padding: 8px 10px;
+            font-size: 13px;
+            border-radius: 9px;
+        }
 
         .pagination-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 6px;
-            margin-top: 30px;
-            font-family: 'Inter', sans-serif;
+            gap: 7px;
+            margin-top: 24px;
         }
 
-        .pagination-container button {
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
+        .pagination-container button,
+        .page-number {
+            padding: 8px 12px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
             background: white;
-            cursor: pointer;
-            font-weight: 600;
             color: #374151;
-            transition: all 0.2s ease;
-        }
-
-        .pagination-container button:hover:not(:disabled) {
-            background: #1d4ed8;
-            color: white;
+            font-weight: 700;
+            cursor: pointer;
         }
 
         .pagination-container button:disabled {
@@ -439,665 +395,475 @@
             cursor: not-allowed;
         }
 
-        .pagination-container .page-number {
-            padding: 6px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid #e5e7eb;
-            font-weight: 600;
+        .page-number.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
-        .pagination-container .page-number.active {
-            background: #1d4ed8;
-            color: white;
-            border-color: #1d4ed8;
+        .admin-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
-
-        .btn-logout {
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: none;
-            background: #dc2626;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
+        .admin-card {
+            padding: 20px;
+            border-radius: 16px;
+            background: var(--soft);
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text);
             transition: all 0.2s ease;
         }
 
-        .btn-logout:hover {
-            background: #b91c1c;
+        .admin-card:hover {
+            border-color: var(--primary);
+            background: #eef2ff;
         }
 
-    
-        #busqueda-filtro {
-            background: #f8fafc; 
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 24px; 
-            border: 1px solid #e2e8f0;
+        .admin-card strong {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 6px;
         }
 
-
-        /* =========================
-        MODO OSCURO
-        ========================= */
-
-        body.dark .navbar {
-            background: linear-gradient(180deg, #020617, #020617cc);
-            border-bottom: 1px solid #1e293b;
-            box-shadow: none;
+        .result {
+            margin-top: 18px;
+            padding: 16px;
+            border-radius: 12px;
+            display: none;
         }
 
-        body.dark .navbar-brand {
-            color: #93c5fd;
+        .result.success {
+            background: #ecfdf5;
+            color: #065f46;
         }
 
-        body.dark .nav-tabs {
-            background: #020617;
-            padding: 6px;
-            border-radius: 10px;
-            gap: 6px;
+        .result.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
         }
 
-        body.dark .nav-tab {
-            background: transparent;
-            color: #9ca3af;
-            border-radius: 8px;
-            padding: 10px 18px;
+        .result.loading {
+            background: #f3f4f6;
+            color: #4b5563;
         }
 
-        body.dark .nav-tab.active {
-            background: #1e293b;
-            color: #93c5fd;
-            box-shadow: inset 0 0 0 1px #334155;
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0, 0, 0, .1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
         }
 
-        body.dark .nav-tab:hover:not(.active) {
-            background: #020617;
-            color: white;
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
-        body.dark .btn-logout {
-            background: #7f1d1d;
+        footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+            margin: 35px 0;
         }
 
-        body.dark .btn-logout:hover {
-            background: #991b1b;
+        @media (max-width: 1000px) {
+
+            .form-grid,
+            .filters-grid,
+            .admin-actions {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .scan-row {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .toggle-theme {
-            background: transparent;
-            border: 1px solid #334155;
-            color: #cbd5f5;
-            padding: 6px 12px;
-            border-radius: 999px;
-            cursor: pointer;
-            transition: all .2s ease;
+        @media (max-width: 720px) {
+            .navbar {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 16px;
+            }
+
+            .nav-tabs,
+            .navbar-right {
+                width: 100%;
+            }
+
+            .container {
+                margin: 18px;
+                padding: 22px;
+            }
+
+            .form-grid,
+            .filters-grid,
+            .admin-actions {
+                grid-template-columns: 1fr;
+            }
         }
-
-        .toggle-theme:hover {
-            background: #1e293b;
-        }
-        /* ===== MODO OSCURO GLOBAL ===== */
-        body.dark {
-            background: radial-gradient(circle at top, #020617, #020617 70%);
-            color: #e5e7eb;
-        }
-
-        /* Contenedores */
-        body.dark .container {
-            background: #020617;
-            border: 1px solid #1e293b;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        }
-
-        /* Títulos */
-        body.dark h1,
-        body.dark h2,
-        body.dark h3,
-        body.dark label {
-            color: #e5e7eb;
-        }
-
-        /* Inputs */
-        body.dark input,
-        body.dark select {
-            background: #020617;
-            border: 1px solid #334155;
-            color: #e5e7eb;
-        }
-
-        body.dark input::placeholder {
-            color: #64748b;
-        }
-
-        body.dark input:focus,
-        body.dark select:focus {
-            border-color: #6366f1;
-            background: #020617;
-        }
-
-        /* Botón principal */
-        body.dark button {
-            background: linear-gradient(135deg, #1e40af, #1d4ed8);
-            color: white;
-        }
-
-        body.dark button:hover {
-            background: linear-gradient(135deg, #1d4ed8, #2563eb);
-        }
-
-        /* Tarjetas */
-        body.dark .accion-card {
-            background: #020617;
-            border: 1px solid #334155;
-        }
-
-        body.dark .accion-card:hover {
-            background: #020617;
-            border-color: #6366f1;
-        }
-
-        /* Flujo por pasos */
-        body.dark .flujo-paso {
-            background: #020617;
-            border: 1px solid #334155;
-            color: #9ca3af;
-        }
-
-        body.dark .flujo-paso.activo {
-            background: linear-gradient(135deg, #1e40af, #2563eb);
-            color: white;
-        }
-
-        /* Secciones de estado */
-        body.dark #datos-pieza-encontrada,
-        body.dark #datos-nueva-pieza,
-        body.dark #camposProducto,
-        body.dark #opcionesNumeroParte {
-            background: #020617 !important;
-            border: 1px solid #334155 !important;
-        }
-
-        /* Tabla */
-        body.dark table {
-            background: #020617;
-            color: #e5e7eb;
-        }
-
-        body.dark th {
-            background: #020617;
-            color: #93c5fd;
-        }
-
-        body.dark td {
-            border-bottom: 1px solid #1e293b;
-        }
-
-        body.dark tr:hover {
-            background: #020617;
-        }
-        
-
-        :root {
-            --bg-main: #0b1020;
-            --bg-card: #0f172a;
-            --bg-input: #020617;
-            --border-soft: #1e293b;
-            --text-main: #e5e7eb;
-            --text-muted: #94a3b8;
-            --accent: #6366f1;
-        }
-
-        body.dark {
-            background: radial-gradient(ellipse at top, #0f172a 0%, #020617 60%);
-            color: var(--text-main);
-        }
-
-
-        body.dark .container,
-        body.dark .card,
-        body.dark .panel,
-        body.dark .table-container {
-            background: linear-gradient(180deg, #0b1220, #020617);
-            border: 1px solid var(--border-soft);
-            box-shadow: 0 10px 40px rgba(0,0,0,.45);
-        }
-
-        body.dark input,
-        body.dark select,
-        body.dark textarea {
-            background: #020617;
-            color: #e5e7eb;
-            border: 1px solid #1e293b;
-        }
-
-        body.dark input::placeholder {
-            color: #64748b;
-        }
-
-        body.dark input:focus,
-        body.dark select:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99,102,241,.3);
-            background: #020617;
-        }
-
-
-        body.dark table {
-            background: transparent;
-            color: #e5e7eb;
-        }
-
-        body.dark th {
-            background: #020617;
-            color: #93c5fd;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        body.dark td {
-            border-bottom: 1px solid #1e293b;
-        }
-
-        body.dark tr:hover {
-            background: rgba(99,102,241,0.08);
-        }
-
-        body.dark .navbar {
-            background: rgba(2,6,23,0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #1e293b;
-        }
-
-        body.dark .nav-tab {
-            background: transparent;
-            color: #c7d2fe;
-        }
-
-        body.dark .nav-tab.active {
-            background: #020617;
-            border: 1px solid #1e293b;
-        }
-
-        body.dark button {
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
-            color: white;
-        }
-
-
-
     </style>
 </head>
+
 <body>
-
-    <!-- Barra de navegación -->
     <nav class="navbar">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo" style="display: block; margin: 0 auto 20px auto; width: 60px;">
-            <a href="#" onclick="showSection('registro')" class="navbar-brand">OTech inventario</a>
+        <div class="brand">
+            <img src="img/Logo 1 OTECH-Photoroom.png" alt="OTech Logo">
+            <a href="#" onclick="showSection('registro')" class="navbar-brand">OTech MXD</a>
         </div>
+
         <div class="nav-tabs">
-            <button class="nav-tab" onclick="showSection('registro')">Registrar pieza</button>
+            <button class="nav-tab active" onclick="showSection('registro')">Registro</button>
             <button class="nav-tab" onclick="showSection('inventario')">Inventario</button>
-            <button class="nav-tab" id="btn-admin" onclick="showSection('administracion')" style="display: none;">Administración</button>
+            <button class="nav-tab" id="btn-admin" onclick="showSection('administracion')"
+                style="display:none;">Administración</button>
         </div>
-        <!--<button onclick="toggleDarkMode()" class="toggle-theme" title="Cambiar tema" style="width: 5%;">
-            🌙
-        </button>-->
 
-
-
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
-            <span id="usuario-nombre" style="font-weight: 500; color: var(--gray-700);"></span>
-            <button onclick="cerrarSesion()" class="btn-logout">
-                Cerrar sesión
-            </button>
-
+        <div class="navbar-right">
+            <span id="usuario-nombre"></span>
+            <button onclick="cerrarSesion()" class="btn-logout">Cerrar sesión</button>
         </div>
     </nav>
 
-
-
-
-    <!-- Sección: Registrar Pieza -->
-    <div id="registro-section">
+    <section id="registro-section" class="section" style="display:block;">
         <div class="container">
-            <h1>Registro de Piezas</h1>
+            <h1>Registro de Inventario</h1>
+            <p class="subtitle">Escanea o registra entradas de OTech y MXD.</p>
 
-            <!-- Campo único de escaneo -->
-            <div class="form-group">
-                <label for="codigoEscaneado">Escanea Código (Número de parte, Número de serie)</label>
-                <input type="text" id="codigoEscaneado" placeholder="Escanee o ingrese cualquier código" autofocus>
-            </div>
-            <button id="btnBuscar" onclick="buscarCodigo()">Buscar</button>
-
-            <!-- Resultado de búsqueda -->
-            <div id="resultado"></div>
-            <!-- Flujo visual -->
-
-            <div class="separador-flujo">
-                <div class="flujo-estado">
-                    <div class="flujo-paso activo" id="paso-1">1. Escaneo</div>
-                    <div class="flujo-paso" id="paso-2">2. Acción</div>
-                    <div class="flujo-paso" id="paso-3">3. Detalle</div>
-                </div>
-
-                <!-- Acciones profesionales -->
-                <div id="acciones" class="acciones" style="display:none;">
-                    <div class="accion-card" onclick="seleccionarAccion('registro')">
-                        <h3>Registrar nueva pieza</h3>
-                        <p>Registrar una pieza nueva con este número de parte.</p>
-                    </div>
-
-                    <div class="accion-card" onclick="seleccionarAccion('actualizar')">
-                        <h3>Cambiar estado</h3>
-                        <p>Actualizar el estado de una pieza existente.</p>
-                    </div>
-                </div>
-
-                <!-- Escaneo de serie para actualizar -->
-                <div id="scan-serie" style="display:none; margin-top:24px;">
-                    <label>Escanea el número de serie</label>
-                    <input type="text" id="serieEscaneada" placeholder="Escanea número de serie">
-                </div>   
-            </div>
-            
-
-
-
-            <!-- Sección: Opciones al detectar Número de Parte -->
-            <div id="opcionesNumeroParte" style="display: none; margin-top: 24px; padding: 24px; background-color: #eef2ff; border: 2px solid #6366f1; border-radius: 12px;">
-                <h2 style="color: #4338ca;">Número de Parte Detectado</h2>
-                <p style="margin: 12px 0; color: #374151;">
-                    Este número de parte ya existe. ¿Qué deseas hacer?
-                </p>
-
-                <!-- Guardamos el id del producto -->
-                <input type="hidden" id="id-producto-oculto">
-
-                <div style="display: flex; gap: 16px; margin-top: 16px;">
-                    <button onclick="mostrarRegistroPieza()" style="background-color: #10b981; color: white;">
-                        Registrar nueva pieza
-                    </button>
-
-                    <button onclick="mostrarActualizarPieza()" style="background-color: #f59e0b; color: white;">
-                        Actualizar estado de una pieza
-                    </button>
-                </div>
-
-                <!-- Selector de piezas por número de serie -->
-                <div id="selector-piezas" style="display: none; margin-top: 20px;">
-                    <label for="select-serie" style="font-weight: 600;">Selecciona la pieza (Número de serie)</label>
-                    <select id="select-serie" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #c7d2fe; margin-top: 8px;">
-                        <!-- Opciones dinámicas -->
-                    </select>
-                </div>
-            </div>
-
-
-            <!-- Sección: Datos de Pieza Encontrada (Actualizar Estado) -->
-            <div id="datos-pieza-encontrada" style="display: none; margin-top: 24px; padding: 24px; background-color: #f0f7ff; border: 2px solid #1d4ed8; border-radius: 12px;">
-                <h2 style="color: #1d4ed8;">Actualizar Estado</h2><br>
-                <div class="form-group">
-                    <label>Nombre del Producto:</label>
-                    <input type="text" id="nombre-producto-encontrado" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Número de Serie:</label>
-                    <input type="text" id="numero-serie-encontrado" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Caja:</label>
-                    <input type="text" id="caja-pieza-encontrada" placeholder="Ej: Caja A1, Estante B2">
-                </div>
-
-                <div class="form-group">
-                    <label>Estado Actual:</label>
-                    <input type="text" id="estado-actual-encontrado" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Nuevo Estado:</label>
-                    <select id="nuevo-estado" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
-                        <option value="Disponible">Disponible</option>
-                        <option value="Venta">En Venta</option>
-                        <option value="Garantia">En Garantía</option>
-                        <option value="Reparacion">En Reparación</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Observaciones (opcional):</label>
-                    <input type="text" id="observaciones-estado" placeholder="Motivo del cambio...">
-                </div>
-                <input type="hidden" id="id-pieza-oculto">
-                <button id="btnActualizarEstado" onclick="actualizarEstadoPieza()" style="background-color: #f59e0b; color: white;">Actualizar Estado</button>
-            </div>
-
-            <!-- Sección: Datos para Nueva Pieza (Registro) -->
-            <div id="datos-nueva-pieza" style="display: none; margin-top: 24px; padding: 24px; background-color: #f0fff4; border: 2px solid #10b981; border-radius: 12px;">
-                <h2 style="color: #10b981;">Registrar Nueva Pieza</h2><br>
-                <div class="form-group">
-                    <label for="codigo-original-nueva">Código Original (Proveedor/Fabricante)</label>
-                    <input type="text" id="codigo-original-nueva" readonly> <!-- Solo lectura si se encontró producto -->
-                </div>
-                <div class="form-group">
-                    <label for="nombre-producto-nueva">Nombre del Producto</label>
-                    <input type="text" id="nombre-producto-nueva" readonly> <!-- Solo lectura si se encontró producto -->
-                </div>
-                <div class="form-group">
-                    <label for="descripcion-producto-nueva">Descripción del Producto</label>
-                    <input type="text" id="descripcion-producto-nueva" readonly> <!-- Solo lectura si se encontró producto -->
-                </div>
-                <div class="form-group">
-                    <label for="numero-serie-nueva">Número de Serie *</label>
-                    <input type="text" id="numero-serie-nueva" placeholder="Ingrese el número de serie único" required>
-                </div>
-                <div class="form-group">
-                    <label for="caja-nueva">Caja de Almacenamiento *</label>
-                    <input type="text" id="caja-nueva" placeholder="Ej: Caja A1, Estantería B3" required>
-                </div>
-                <button id="btnRegistrarPieza" onclick="registrarPiezaNueva()" style="background-color: #10b981; color: white;">Registrar Pieza</button>
-            </div>
-
-            <!-- Sección: Datos para Nuevo Producto (Registro) - Igual que antes -->
-            <div id="camposProducto" style="display: none; margin-top: 24px; padding: 24px; background-color: #fef2f2; border: 2px solid #ef4444; border-radius: 12px;">
-                <h2 style="color: #ef4444;">Producto Nuevo — Complete los datos</h2><br>
-                <div class="form-group">
-                    <label for="nombreProducto">Nombre del producto *</label>
-                    <input type="text" id="nombreProducto" placeholder="Ej: Sensor de Presión XYZ-200" required>
-                </div>
-                <div class="form-group">
-                    <label for="descripcionProducto">Descripción</label>
-                    <input type="text" id="descripcionProducto" placeholder="Ej: Sensor industrial de alta precisión">
-                </div>
-                <div class="form-group">
-                    <label for="categoriaProducto">Categoría</label>
-                    <input type="text" id="categoriaProducto" placeholder="Ej: Sensores, Electrónica, Herramientas">
-                </div>
-                <button id="btnRegistrarPieza" onclick="registrarPiezaNueva()" style="background-color: #ef4444; color: white;">Registrar Producto y Pieza</button>
-            </div>
-
-        </div>
-
-        <div id="alertas-stock" >
-            <!--<h3 style="color: #d97706; margin: 0 0 10px 0;">Alertas de Stock Bajo</h3>-->
-            <div id="lista-alertas"></div>
-        </div>
-    </div>
-
-    <!-- Sección: Inventario -->
-    <div id="inventario-section">
-        <div class="container">
-            <h1>Inventario de Piezas</h1>
-
-            <!-- Barra de búsqueda y filtros -->
-            <div id="busqueda-filtro">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end;">
-                    <!-- Búsqueda por número de serie -->
+            <div class="scan-card">
+                <div class="scan-row">
                     <div>
-                        <label for="filtro-serie" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Número de Serie</label>
-                        <input type="text" id="filtro-serie" placeholder="Ej: SN123456" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
+                        <label for="codigoEscaneado">Escanear código / número de serie / número de parte</label>
+                        <input type="text" id="codigoEscaneado" placeholder="Escanea o escribe el código">
+                    </div>
+                    <button class="btn-primary" onclick="buscarCodigo()">Buscar</button>
+                </div>
+                <div id="resultado" class="result"></div>
+            </div>
+
+            <div id="opciones-producto" style="display:none;">
+                <div class="actions-row">
+                    <button class="btn-success" onclick="mostrarRegistroInventario()">Registrar entrada</button>
+                    <button class="btn-warning" onclick="mostrarActualizarInventario()">Actualizar inventario</button>
+                </div>
+            </div>
+
+            <div id="form-registro-inventario" style="display:none;">
+                <h2 style="margin-bottom:20px;">Registrar entrada</h2>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Producto</label>
+                        <input type="text" id="registro-producto-nombre" readonly>
+                        <input type="hidden" id="registro-id-producto">
                     </div>
 
-                    <!-- Filtro por estado -->
-                    <div>
-                        <label for="filtro-estado" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Estado</label>
-                        <select id="filtro-estado" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
-                            <option value="">Todos los estados</option>
-                            <option value="Disponible">Disponible</option>
-                            <option value="Venta">En Venta</option>
-                            <option value="Garantia">En Garantía</option>
-                            <option value="Reparacion">En Reparación</option>
+                    <div class="form-group">
+                        <label for="registro-numero-serie">Número de serie *</label>
+                        <input type="text" id="registro-numero-serie" placeholder="Ej: 87AZFP702524B2540344">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registro-fecha-entrada">Fecha de entrada *</label>
+                        <input type="date" id="registro-fecha-entrada">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registro-id-ubicacion">Ubicación / anaquel *</label>
+                        <select id="registro-id-ubicacion">
+                            <option value="">Cargando ubicaciones...</option>
                         </select>
                     </div>
 
-                    <!-- Filtro por producto (opcional, si tienes muchos productos) -->
-                    <div>
-                        <label for="filtro-producto" style="font-weight: 600; font-size: 14px; color: var(--gray-700);">Producto</label>
-                        <select id="filtro-producto" style="width: 100%; padding: 10px 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 14px;">
-                            <option value="">Todos los productos</option>
-                            <!-- Opciones se llenarán dinámicamente -->
+                    <div class="form-group">
+                        <label for="registro-estado">Estado *</label>
+                        <select id="registro-estado">
+                            <option value="">Cargando estados...</option>
                         </select>
                     </div>
-                    <button id="btn-exportar" onclick="exportarInventario()" style="margin: 20px 0; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                        Exportar a Excel
-                    </button>
+
+                    <div class="form-group">
+                        <label for="registro-para-venta">Para venta</label>
+                        <select id="registro-para-venta">
+                            <option value="0">No</option>
+                            <option value="1">Sí</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="registro-observaciones">Observaciones</label>
+                        <textarea id="registro-observaciones"
+                            placeholder="Ej: Activado pero listo para venta"></textarea>
+                    </div>
+                </div>
+
+                <div class="actions-row">
+                    <button class="btn-soft" onclick="resetearFormulario()">Cancelar</button>
+                    <button class="btn-success" onclick="registrarInventario()">Guardar entrada</button>
                 </div>
             </div>
 
-            <!-- Indicador de carga -->
-            <div id="inventario-cargando" style="text-align: center; padding: 40px; display: none;">
+            <div id="form-actualizar-inventario" style="display:none;">
+                <h2 style="margin-bottom:20px;">Actualizar inventario</h2>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Producto</label>
+                        <input type="text" id="actualizar-producto-nombre" readonly>
+                        <input type="hidden" id="actualizar-id-inventario">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Número de serie</label>
+                        <input type="text" id="actualizar-numero-serie" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-estado">Estado</label>
+                        <select id="actualizar-estado"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-id-ubicacion">Ubicación / anaquel</label>
+                        <select id="actualizar-id-ubicacion"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-fecha-salida">Fecha de salida</label>
+                        <input type="date" id="actualizar-fecha-salida">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-destinatario">Destinatario</label>
+                        <input type="text" id="actualizar-destinatario" placeholder="Cliente, proyecto o responsable">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-vendido">Vendido</label>
+                        <select id="actualizar-vendido">
+                            <option value="0">No</option>
+                            <option value="1">Sí</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-prestamo">Préstamo</label>
+                        <select id="actualizar-prestamo">
+                            <option value="0">No</option>
+                            <option value="1">Sí</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="actualizar-para-venta">Para venta</label>
+                        <select id="actualizar-para-venta">
+                            <option value="0">No</option>
+                            <option value="1">Sí</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="actualizar-observaciones">Observaciones</label>
+                        <textarea id="actualizar-observaciones" placeholder="Describe el cambio realizado"></textarea>
+                    </div>
+                </div>
+
+                <div class="actions-row">
+                    <button class="btn-soft" onclick="resetearFormulario()">Cancelar</button>
+                    <button class="btn-warning" onclick="actualizarInventario()">Actualizar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="inventario-section" class="section">
+        <div class="container">
+            <h1>Inventario General</h1>
+            <p class="subtitle">Consulta el inventario completo de OTech y MXD.</p>
+
+            <div class="filters-card">
+                <div class="filters-grid">
+                    <div>
+                        <label for="filtro-marca">Marca</label>
+                        <select id="filtro-marca">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filtro-modelo">Modelo</label>
+                        <select id="filtro-modelo">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filtro-tipo">Tipo</label>
+                        <select id="filtro-tipo">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filtro-estado">Estado</label>
+                        <select id="filtro-estado">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filtro-serie">Número de serie</label>
+                        <input type="text" id="filtro-serie" placeholder="Buscar por serie">
+                    </div>
+
+                    <div>
+                        <label for="filtro-venta">Vendido</label>
+                        <select id="filtro-venta">
+                            <option value="">Todos</option>
+                            <option value="1">Sí</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filtro-prestamo">Préstamo</label>
+                        <select id="filtro-prestamo">
+                            <option value="">Todos</option>
+                            <option value="1">Sí</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-success" onclick="exportarInventario()">Exportar Excel</button>
+                </div>
+            </div>
+
+            <div id="inventario-cargando" style="display:none; text-align:center; padding:30px;">
                 <div class="loading-spinner"></div>
-                <p>Cargando inventario...</p>
+                Cargando inventario...
             </div>
 
-            <!-- Tabla de inventario -->
             <div id="inventario-contenido">
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>ID Pieza</th>
+                                <th>ID</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Tipo</th>
                                 <th>Producto</th>
-                                <th>Dron</th>
-                                <th>Número de Serie</th>
+                                <th>Número de serie</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Vendido</th>
+                                <th>Préstamo</th>
+                                <th>Destinatario</th>
                                 <th>Estado</th>
-                                <th>Fecha de Registro</th>
-                                <th>Registrado por</th>
-                                <th>Caja</th>
-                                <th>Historial</th>
+                                <th>Ubicación</th>
+                                <th>P/Venta</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="inventario-body">
-                            <!-- Aquí se insertan las filas dinámicamente -->
-                        </tbody>
+                        <tbody id="inventario-body"></tbody>
                     </table>
-                    <!-- Paginación -->
-                    <div id="paginacion-inventario" class="pagination-container">
-                        <button id="btn-first">«</button>
-                        <button id="btn-prev">‹</button>
+                </div>
 
-                        <span id="paginas"></span>
-
-                        <button id="btn-next">›</button>
-                        <button id="btn-last">»</button>
-                    </div>
-
+                <div id="paginacion-inventario" class="pagination-container">
+                    <button id="btn-first">«</button>
+                    <button id="btn-prev">‹</button>
+                    <span id="paginas"></span>
+                    <button id="btn-next">›</button>
+                    <button id="btn-last">»</button>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="renderer.js"></script>
-
-    <!-- Sección: Administración -->
-    <div id="administracion-section" style="display: none;">
+    <section id="administracion-section" class="section">
         <div class="container">
             <h1>Panel de Administración</h1>
-            
+            <p class="subtitle">Gestiona usuarios, productos y reportes.</p>
 
-            <div style="text-align: center; margin-bottom: 30px;">
-                <a href="crear-usuario.html" style="display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Nuevo usuario
+            <div class="admin-actions">
+                <a class="admin-card" href="crear-usuario.html">
+                    <strong>Nuevo usuario</strong>
+                    Registrar usuarios operativos o administradores.
                 </a>
-                <a href="crear-producto.html" style="display: inline-block; padding: 12px 24px; background: #15347d; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                    Nuevo producto
+
+                <a class="admin-card" href="crear-producto.html">
+                    <strong>Nuevo producto</strong>
+                    Crear productos y compatibilidad con modelos.
+                </a>
+
+                <a class="admin-card" href="#" onclick="showSection('inventario')">
+                    <strong>Ver inventario</strong>
+                    Consultar existencias y movimientos.
                 </a>
             </div>
-            <div style="margin:20px 0; padding:16px; background:#f8fafc; border-radius:12px; border:1px solid #e5e7eb;">
-                <h3 style="margin-bottom:12px;">Exportar historial de movimientos</h3>
 
-                <div style="display:flex; gap:12px; align-items:end;">
+            <div class="filters-card">
+                <h3 style="margin-bottom:14px;">Exportar historial de movimientos</h3>
+
+                <div class="filters-grid">
                     <div>
-                        <label>Desde</label>
+                        <label for="historial-fecha-inicio">Desde</label>
                         <input type="date" id="historial-fecha-inicio">
                     </div>
 
                     <div>
-                        <label>Hasta</label>
+                        <label for="historial-fecha-fin">Hasta</label>
                         <input type="date" id="historial-fecha-fin">
                     </div>
 
-                    <button onclick="exportarHistorialPorFechas()"
-                        style="padding:10px 16px; background:#10b981; color:white; border:none; border-radius:8px;">
-                        Exportar Excel
-                    </button>
+                    <button class="btn-success" onclick="exportarHistorialPorFechas()">Exportar historial</button>
                 </div>
             </div>
 
+            <h2 style="margin:28px 0 16px;">Usuarios registrados</h2>
 
-            <!-- Listado de usuarios (opcional) -->
-            <h2 style="margin-top: 40px;">Usuarios Registrados</h2>
-            <div id="lista-usuarios" style="margin-top: 20px;">
-                <div class="loading-spinner" id="cargando-usuarios" style="display: none;"></div>
-                <table id="tabla-usuarios" style="width: 100%; border-collapse: collapse; margin-top: 20px; display: none;">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Usuario</th>
-                            <th>Rol</th>
-                            <th>Último Login</th>
-                            <th>Activo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-usuarios"></tbody>
-                </table>
+            <div id="lista-usuarios">
+                <div id="cargando-usuarios" style="display:none;">
+                    <div class="loading-spinner"></div>
+                    Cargando usuarios...
+                </div>
+
+                <div class="table-container">
+                    <table id="tabla-usuarios" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Último login</th>
+                                <th>Activo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-usuarios"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>    
+    </section>
 
     <footer>
-        Sistema de inventario OTech — v2.0
+        Sistema de inventario OTech MXD — v3.0
     </footer>
 
-
-
-    <div id="modal-historial" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:999; align-items:center; justify-content:center;">
-    <div style="background:white; width:90%; max-width:700px; border-radius:16px; padding:24px; max-height:80vh; overflow:auto;">
-        <h2 style="margin-bottom:16px;">Historial de Movimientos</h2>
-
-        <table style="width:100%; border-collapse:collapse;">
-        <thead>
-            <tr>
-            <th>Fecha</th>
-            <th>Movimiento</th>
-            <th>Usuario</th>
-            <th>Detalle</th>
-            </tr>
-        </thead>
-        <tbody id="historial-body"></tbody>
-        </table>
-
-        <div style="margin-top:20px; text-align:right;">
-        <button onclick="cerrarModalHistorial()" style="padding:10px 16px; background:#ef4444; color:white; border:none; border-radius:8px;">Cerrar</button>
-        </div>
-    </div>
-    </div>
-    
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="renderer.js"></script>
 </body>
+
 </html>
