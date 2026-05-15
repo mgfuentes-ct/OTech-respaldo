@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Inventario OTech / MXD</title>
+    <title>Acceso - Inventario OTech / MXD</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-wrapper">
 
     <div class="login-glass-card">
-        <h2 style="margin-bottom: 32px;">Inventario OTech / MXD</h2>
+        <h2>Inventario OTech / MXD</h2>
         
         <div class="form-group">
-            <input type="text" id="username" placeholder="Usuario" autofocus>
+            <input type="text" id="username" placeholder="Nombre de usuario" autofocus>
         </div>
+        
         <div class="form-group">
             <input type="password" id="password" placeholder="Contraseña">
         </div>
         
-        <button onclick="login()">Entrar</button>
-        <p id="error" style="color: var(--danger); text-align: center; margin-top: 16px; font-weight: 500;"></p>
+        <button onclick="login()">Acceder al Sistema</button>
+        
+        <p id="error" style="color: var(--danger); text-align: center; margin-top: 24px; font-weight: 600; min-height: 24px;"></p>
+        
+        <div style="margin-top: 40px; font-size: 13px; color: #94a3b8; font-weight: 500;">
+            &copy; 2026 OTech / MXD Solutions
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -29,10 +35,16 @@
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('error');
 
+            if (!username || !password) {
+                errorDiv.textContent = "Por favor ingresa tus credenciales";
+                return;
+            }
+
             const btn = document.querySelector('button');
             const originalText = btn.textContent;
             btn.textContent = 'Verificando...';
             btn.disabled = true;
+            errorDiv.textContent = "";
 
             try {
                 const response = await axios.post('http://localhost:8000/login', new URLSearchParams({
@@ -47,14 +59,13 @@
             } catch (error) {
                 btn.textContent = originalText;
                 btn.disabled = false;
-                errorDiv.textContent = "Usuario o contraseña incorrectos";
+                errorDiv.textContent = "Credenciales incorrectas";
                 
                 // Shake effect on error
                 const card = document.querySelector('.login-glass-card');
-                card.style.transform = 'translateY(0) translateX(-10px)';
-                setTimeout(() => card.style.transform = 'translateY(0) translateX(10px)', 100);
-                setTimeout(() => card.style.transform = 'translateY(0) translateX(-10px)', 200);
-                setTimeout(() => card.style.transform = 'translateY(0) translateX(0)', 300);
+                card.style.animation = 'none';
+                card.offsetHeight; // trigger reflow
+                card.style.animation = 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both';
             }
         }
         
@@ -64,6 +75,14 @@
             }
         });
     </script>
-    <script src="theme.js"></script>
+    
+    <style>
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
 </body>
 </html>

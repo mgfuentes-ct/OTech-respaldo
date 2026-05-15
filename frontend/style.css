@@ -74,6 +74,13 @@ body {
     letter-spacing: -0.5px;
 }
 
+.navbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .nav-tabs {
     display: flex;
     gap: 8px;
@@ -338,4 +345,87 @@ tr:hover td {
 input.invalid, select.invalid {
     border-color: var(--danger) !important;
     background: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* ================== LOGIN PAGE ================== */
+.login-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Dynamic background elements */
+.login-wrapper::before, .login-wrapper::after {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.login-wrapper::before {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+    top: -200px;
+    left: -200px;
+}
+
+.login-wrapper::after {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    bottom: -200px;
+    right: -200px;
+}
+
+.login-glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 60px 45px;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05), 
+                0 5px 15px rgba(0, 0, 0, 0.03);
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    animation: loginFade 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginFade {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.login-glass-card h2 {
+    font-size: 28px;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, #4f46e5, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+}
+
+.login-glass-card input {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+.login-glass-card input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.login-glass-card button {
+    padding: 18px;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+    margin-top: 20px;
 }
